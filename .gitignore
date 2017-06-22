@@ -1,3 +1,13 @@
+# Wing IDE additions
+*.wpu
+
+# web2py exclusions
+cache/
+databases/
+errors/
+sessions/
+uploads/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
