@@ -1,0 +1,13 @@
+
+{{extend 'layout.html'}}
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script src="{{=URL('static','mtjs/mtyoutube.js')}}"></script>
+
+<script type="text/javascript">
+player = new MtYouTubePlayer()
+function onYouTubeIframeAPIReady() {
+  player.createPlayer('player', '{{=videoId}}');
+}
+</script>
+<div id="player"></div>
