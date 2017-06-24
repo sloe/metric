@@ -4,10 +4,16 @@
 <script src="https://www.youtube.com/iframe_api"></script>
 <script src="{{=URL('static','mtjs/mtyoutube.js')}}"></script>
 
-<script type="text/javascript">
+<script type="text/javascript"><!--
 player = new MtYouTubePlayer()
 function onYouTubeIframeAPIReady() {
   player.createPlayer('player', '{{=videoId}}');
 }
-</script>
+//->></script>
 <div id="player"></div>
+<div onclick="player.doPause()">{{=BUTTON("Pause")}}</div>
+<div onclick="player.doSeek(10)">{{=BUTTON("Seek")}}</div>
+<div onclick="player.doNudge(-0.1)">{{=BUTTON("Nudge")}}</div>
+<div onclick="player.doNudge(12)">{{=BUTTON("Big Nudge")}}</div>
+<div onclick="player.setSize(1280, 720)">{{=BUTTON("Bigger")}}</div>
+<div onclick="player.setSize(640, 360)">{{=BUTTON("Smaller")}}</div>
