@@ -1,2 +1,2 @@
-# metrics
-Oarstack metrics web2py app
+# metric
+Oarstack metric web2py app

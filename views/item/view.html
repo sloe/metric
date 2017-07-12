@@ -1,8 +1,9 @@
 
 {{extend 'layout.html'}}
+{{include 'metricbase.html'}}
+{{include 'metricytbase.html'}}
 
-<script src="https://www.youtube.com/iframe_api"></script>
-<script src="{{=URL('static','mtjs/mtyoutube.js')}}"></script>
+
 
 <script type="text/javascript"><!--
 player = new MtYouTubePlayer()
@@ -17,3 +18,28 @@ function onYouTubeIframeAPIReady() {
 <div onclick="player.doNudge(12)">{{=BUTTON("Big Nudge")}}</div>
 <div onclick="player.setSize(1280, 720)">{{=BUTTON("Bigger")}}</div>
 <div onclick="player.setSize(640, 360)">{{=BUTTON("Smaller")}}</div>
+
+<div id="item-view"></div>
+
+<script>
+
+var ItemView = Backbone.View.extend({
+  el: '#item-view',
+
+  initialize: function() {
+    this.listenTo(this.model, 'sync change', this.render);
+    this.model.fetch();
+    this.render();
+  },
+
+  render: function() {
+    var html = 'Name: ' + this.model.get('f_name');
+    html += ', Source ID: ' + this.model.get('f_sourceid');
+    this.$el.html(html);
+    return this;
+  }
+});
+
+var item = new ItemModel();
+var itemView = new ItemView({model: item});
+</script>
