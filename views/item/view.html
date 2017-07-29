@@ -21,6 +21,9 @@ function onYouTubeIframeAPIReady() {
 
 <div id="item-view"></div>
 
+<div id="example"></div>
+
+
 <script>
 
 var ItemView = Backbone.View.extend({
@@ -42,4 +45,110 @@ var ItemView = Backbone.View.extend({
 
 var item = new ItemModel();
 var itemView = new ItemView({model: item});
+</script>
+
+<script>
+var data = [
+  ["", "Ford", "Volvo", "Toyota", "Honda"],
+  ["2016", 10, 11, 12, 13],
+  ["2017", 20, 11, 14, 13],
+  ["2018", 30, 15, 12, 13]
+];
+
+document.addEventListener("DOMContentLoaded", function () {
+    var container = document.getElementById('example'),
+        hot;
+
+    hot = new Handsontable(container, {
+        data:data,
+        colHeaders: true,
+        rowHeaders: true
+    });
+});
+</script>
+
+
+<div id="example1"></div>
+<button id="add_car">Simulate a new Car</button>
+<br/>
+<select multiple="multiple" id="example1_events" style="width: 100%; height: 100px"></select>
+
+<script>
+  // Handsontable example code
+  var
+    container = document.getElementById('example1'),
+    addCar = document.getElementById('add_car'),
+    eventHolder = document.getElementById('example1_events'),
+    CarModel = Backbone.Model.extend({}),
+    CarCollection,
+    cars,
+    hot;
+  CarCollection = Backbone.Collection.extend({
+    model: CarModel,
+    // Backbone.Collection doesn't support `splice`, yet! Easy to add.
+    splice: hackedSplice
+  });
+  cars = new CarCollection();
+  // since we're not using a server... make up some data. This will make
+  // a couple CarModels from these plain old objects
+  cars.add([
+    {make: 'Dodge', model: 'Ram', year: 2012, weight: 6811},
+    {make: 'Toyota', model: 'Camry', year: 2012, weight: 3190},
+    {make: 'Smart', model: 'Fortwo', year: 2012, weight: 1808}
+  ]);
+  hot = new Handsontable(container, {
+    data: cars,
+    dataSchema: makeCar,
+    contextMenu: true,
+    columns: [
+      attr('make'),
+      attr('model'),
+      attr('year')
+    ],
+    colHeaders: ['Make', 'Model', 'Year']
+    // minSpareRows: 1 //see notes on the left for `minSpareRows`
+  });
+  // this will log all the Backbone events getting fired!
+  cars.on('all', logEvents)
+    .on('add', function () {
+      hot.render();
+    })
+    .on('remove', function () {
+      hot.render();
+    });
+  // you'll have to make something like these until there is a better
+  // way to use the string notation, i.e. "bb:make"!
+  // normally, you'd get these from the server with .fetch()
+  function attr(attr) {
+    // this lets us remember `attr` for when when it is get/set
+    return {data: function (car, value) {
+      if (_.isUndefined(value)) {
+        return car.get(attr);
+      }
+      car.set(attr, value);
+    }};
+  }
+  // just setting `dataSchema: CarModel` would be great, but it is non-
+  // trivial to detect constructors...
+  function makeCar() {
+    return new CarModel();
+  }
+  // use the "good" Collection methods to emulate Array.splice
+  function hackedSplice(index, howMany /* model1, ... modelN */) {
+    var args = _.toArray(arguments).slice(2).concat({at: index}),
+      removed = this.models.slice(index, index + howMany);
+    this.remove(removed).add.apply(this, args);
+    return removed;
+  }
+  // show a log of events getting fired
+  function logEvents(event, model) {
+    var now = new Date(),
+      option = document.createElement('OPTION');
+    option.innerHTML = [':', now.getSeconds(), ':', now.getMilliseconds(), '[' + event + ']',
+      JSON.stringify(model)].join(' ');
+    eventHolder.insertBefore(option, eventHolder.firstChild);
+  }
+  Handsontable.dom.addEvent(addCar, 'click', function () {
+    cars.add({make: "Tesla", model: "S", year: 2012, weight: 4647.3});
+  });
 </script>

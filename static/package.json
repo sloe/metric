@@ -1,0 +1,11 @@
+{
+  "name": "metric",
+  "version": "0.1.0",
+  "description": "Metric webapp",
+  "main": "index.js",
+  "author": "Sloe <sloe@sloecoach.com>",
+  "license": "MIT",
+  "dependencies": {
+    "handsontable": "^0.33.0"
+  }
+}
