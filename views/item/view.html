@@ -2,16 +2,39 @@
 {{extend 'layout.html'}}
 {{include 'metricbase.html'}}
 {{include 'metricytbase.html'}}
-
+{{include 'metriccontrolbase.html'}}
 
 
 <script type="text/javascript"><!--
 player = new MtYouTubePlayer()
 function onYouTubeIframeAPIReady() {
-  player.createPlayer('player', '{{=videoId}}');
+  // player.createPlayer('player', '{{=videoId}}');
 }
 //->></script>
 <div id="player"></div>
+
+{{=TABLE(
+TR(TD(INPUT(_id='player_coarse', _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='player_value')),
+TR(TD(INPUT(_id='player_fine', _type='text')))
+)}}
+
+<script>
+  shuttle = new MtControlShuttle()
+  $(function () {
+    shuttle.create('#player', 600);
+  });
+</script>
+
+
+<div id="interval-table"></div>
+
+<script>
+  intervalModel = new MtIntervalModel()
+  $(function () {
+    intervalModel.create('interval-table');
+  });
+</script>
+
 <div onclick="player.doPause()">{{=BUTTON("Pause")}}</div>
 <div onclick="player.doSeek(10)">{{=BUTTON("Seek")}}</div>
 <div onclick="player.doNudge(-0.1)">{{=BUTTON("Nudge")}}</div>
@@ -46,27 +69,6 @@ var ItemView = Backbone.View.extend({
 var item = new ItemModel();
 var itemView = new ItemView({model: item});
 </script>
-
-<script>
-var data = [
-  ["", "Ford", "Volvo", "Toyota", "Honda"],
-  ["2016", 10, 11, 12, 13],
-  ["2017", 20, 11, 14, 13],
-  ["2018", 30, 15, 12, 13]
-];
-
-document.addEventListener("DOMContentLoaded", function () {
-    var container = document.getElementById('example'),
-        hot;
-
-    hot = new Handsontable(container, {
-        data:data,
-        colHeaders: true,
-        rowHeaders: true
-    });
-});
-</script>
-
 
 <div id="example1"></div>
 <button id="add_car">Simulate a new Car</button>
@@ -152,3 +154,6 @@ document.addEventListener("DOMContentLoaded", function () {
     cars.add({make: "Tesla", model: "S", year: 2012, weight: 4647.3});
   });
 </script>
+
+
+End.

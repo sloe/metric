@@ -6,6 +6,7 @@
   "author": "Sloe <sloe@sloecoach.com>",
   "license": "MIT",
   "dependencies": {
-    "handsontable": "^0.33.0"
+    "handsontable": "^0.33.0",
+    "ion-rangeslider": "^2.2.0"
   }
 }
