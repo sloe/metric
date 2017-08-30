@@ -11,28 +11,28 @@ function onYouTubeIframeAPIReady() {
   // player.createPlayer('player', '{{=videoId}}');
 }
 //->></script>
-<div id="player"></div>
+<div id="player0"></div>
 
 {{=TABLE(
-TR(TD(INPUT(_id='player_coarse', _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='player_value')),
-TR(TD(INPUT(_id='player_fine', _type='text')))
+TR(TD(INPUT(_id='slider0_coarse', _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='slider0_value')),
+TR(TD(INPUT(_id='slider0_fine', _type='text')))
 )}}
 
 <script>
-  shuttle = new MtControlShuttle()
+  shuttle = new MtControlShuttle();
   $(function () {
-    shuttle.create('#player', 600);
+    shuttle.create(0, 600);
   });
 </script>
 
-
-<div id="interval-table"></div>
+<div id="intervaltable0"></div>
 
 <script>
-  intervalModel = new MtIntervalModel()
+  intervalModel = new MtInterval()
   $(function () {
-    intervalModel.create('interval-table');
+    intervalModel.create(0);
   });
+
 </script>
 
 <div onclick="player.doPause()">{{=BUTTON("Pause")}}</div>
