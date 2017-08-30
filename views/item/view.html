@@ -13,15 +13,12 @@ function onYouTubeIframeAPIReady() {
 //->></script>
 <div id="player0"></div>
 
-{{=TABLE(
-TR(TD(INPUT(_id='slider0_coarse', _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='slider0_value')),
-TR(TD(INPUT(_id='slider0_fine', _type='text')))
-)}}
+{{ write_mt_control_interval(0) }}
 
 <script>
-  shuttle = new MtControlShuttle();
+  interval = new MtControlInterval();
   $(function () {
-    shuttle.create(0, 600);
+    interval.create(0, 600);
   });
 </script>
 

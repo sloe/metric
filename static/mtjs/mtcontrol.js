@@ -6,14 +6,14 @@ function MtControlShuttle () {
     this.onValueChange = function(event) {
         if (event.id === this.id) {
             _.each(event.changes, function(change) {
-                if (change.property === 'start_time') {
+                if (change.property === this.propertyName) {
                     this.valueElem.text(change.value);
                 }
             }, this);
 
-            if (event.source !== 'slider') {
+            if (event.source !== 'slider') { // Don't respond to our own events
                 _.each(event.changes, function(change) {
-                    if (change.property === 'start_time') {
+                    if (change.property === this.propertyName) {
                         var coarseValue = Math.floor(change.value / this.coarseStep) * this.coarseStep;
                         var fineValue = change.value - coarseValue;
                         this.coarseSlider.update({from: coarseValue});
@@ -24,28 +24,41 @@ function MtControlShuttle () {
         }
     };
 
+
+    this.onSelectionChange = function(event) {
+        if (event.id === this.id) {
+            console.log('MtControlShuttle.onSelectionChange: ' + JSON.stringify(event));
+        }
+    };
+
+
     this.publishValueChange = function(value) {
         var eventId = 'mt:valueChange';
         var value = this.coarseSlider.result.from + this.fineSlider.result.from;
         Backbone.Mediator.publish(eventId, {
-            changes: [{property: 'start_time', value: value}],
+            changes: [{property: this.propertyName, value: value}],
             id: this.id,
             source: 'slider'
         });
     };
 
-    this.create = function(id, durationSecs) {
+
+    this.create = function(id, propertyName, typeName, durationSecs) {
+        this.id = id;
+        this.propertyName = propertyName;
+        this.typeName = typeName;
+
+        var elemPrefix = '#slider' + id + '_' + propertyName;
+        this.coarseElem = $(elemPrefix + '_coarse');
+        this.fineElem = $(elemPrefix + '_fine');
+        this.valueElem = $(elemPrefix + '_value');
+
         var momentFormat;
         if (durationSecs >= 3600) {
             momentFormat = "HH:mm:ss.S";
         } else {
             momentFormat = "mm:ss.S";
         }
-
-        this.id = id;
-        this.coarseElem = $('#slider' + id + '_coarse');
-        this.fineElem = $('#slider' + id + '_fine');
-        this.valueElem = $('#slider' + id + '_value');
 
         this.coarseStep = 0.1;
         this.fineRange = 1.0;
@@ -112,6 +125,21 @@ function MtControlShuttle () {
         this.coarseSlider = this.coarseElem.data("ionRangeSlider");
         this.fineSlider = this.fineElem.data("ionRangeSlider");
 
+        Backbone.Mediator.subscribe('mt:selectionChange', this.onSelectionChange, this);
         Backbone.Mediator.subscribe('mt:valueChange', this.onValueChange, this);
+
+        return this;
+    };
+};
+
+
+function MtControlInterval () {
+
+    this.create = function(id, durationSecs) {
+        this.shuttles = {
+            start_time: new MtControlShuttle().create(id, 'start_time', 'duration', durationSecs),
+            end_time: new MtControlShuttle().create(id, 'end_time', 'duration', durationSecs),
+            num_events:  new MtControlShuttle().create(id, 'num_events', 'count', durationSecs)
+        };
     };
 };

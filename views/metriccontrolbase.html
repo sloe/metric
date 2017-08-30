@@ -6,3 +6,16 @@
 
 <script src="{{=URL('static', 'js/ion.rangeSlider.js')}}"></script>
 <script src="{{=URL('static', 'mtjs/mtcontrol.js')}}"></script>
+
+{{
+def write_mt_control_interval(id):
+    response.write(TABLE(
+        TR(TD(INPUT(_id='slider%d_start_time_coarse' % id, _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='slider0_value')),
+        TR(TD(INPUT(_id='slider%d_start_time_fine' % id, _type='text', _value="Loading..."), _style="width:400px;")),
+        TR(TD(INPUT(_id='slider%d_end_time_coarse' % id, _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='slider0_value')),
+        TR(TD(INPUT(_id='slider%d_end_time_fine' % id, _type='text', _value="Loading..."), _style="width:400px;")),
+        TR(TD(INPUT(_id='slider%d_num_events_coarse' % id, _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='slider0_value')),
+        TR(TD(INPUT(_id='slider%d_num_events_fine' % id, _type='text', _value="Loading..."), _style="width:400px;"))
+    ))
+    pass
+}}

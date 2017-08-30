@@ -28,7 +28,8 @@ function MtInterval () {
         this.intervals = new MtIntervalCollection();
 
         this.intervals.add([
-            {start_time: 1, end_time: 21, num_events: 10}
+            {start_time: 1, end_time: 21, num_events: 10},
+            {start_time: 23, end_time: 23, num_events: 14}
         ]);
 
         function makeInterval() {
@@ -56,20 +57,27 @@ function MtInterval () {
         ];
 
         this.hot = new Handsontable(this.containerElem, {
-            data: this.intervals,
-            dataSchema: makeInterval,
-            contextMenu: true,
+            colHeaders: ['Start', 'End', 'Number'],
             columns: [
                 columnFn('start_time'),
                 columnFn('end_time'),
                 columnFn('num_events')
             ],
-            colHeaders: ['Start', 'End', 'Number']
+            contextMenu: true,
+            data: this.intervals,
+            dataSchema: makeInterval,
+            enterMoves: {col:0, row: 0},
+            manualColumnResize: true,
+            minSpareRows: 1,
+            minSpareCols: 1,
+            outsideClickDeselects : false,
+            rowHeaders: true
         });
 
 
         this.intervals.on('all', this.intervalsOnAll, this);
         this.hot.addHook('afterChange', this.tableAfterChange.bind(this));
+        this.hot.addHook('afterSelectionEnd', this.tableAfterSelectionEnd.bind(this));
 
         Backbone.Mediator.subscribe('mt:valueChange', this.onValueChange, this);
     };
@@ -83,7 +91,7 @@ function MtInterval () {
     this.tableAfterChange = function(changes, source) {
         if (source === 'edit') {
             _.each(changes, function(change) {
-                var property = this.columnAttrs[change[0]];
+                var property = change[1]();
                 var value = change[3];
                 Backbone.Mediator.publish('mt:valueChange', {
                     changes: [{property: property, value: value}],
@@ -93,9 +101,33 @@ function MtInterval () {
             }, this);
         } else {
             var now = new Date();
-            var message = ['tableAfterChange: ', now.getSeconds(), ':', now.getMilliseconds(), source, ''].join('');
+            var message = ['tableAfterChange: ', now.getSeconds(), ':', now.getMilliseconds(), source, ''];
             console.log(message.join(''));
         }
+    };
+
+
+    this.tableAfterSelectionEnd = function(r, c, r2, c2) {
+
+        var values = this.intervals.at(r).attributes;
+
+        Backbone.Mediator.publish('mt:selectionChange', {
+            activeRow: r,
+            id: this.id,
+            selection: {
+                r: r,
+                c: c,
+                r2: r2,
+                c2: c2
+            },
+            source: 'table',
+            values: values
+        });
+
+        var now = new Date();
+        var message = ['tableAfterSelectionEnd: ', now.getSeconds(), ':', now.getMilliseconds(),
+        ' (', r, ', ', c, ') to (', r2, ', ', c2, ')'];
+        console.log(message.join(''));
     };
 
 
