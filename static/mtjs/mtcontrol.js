@@ -3,6 +3,127 @@
 
 function MtControlShuttle () {
 
+    this.create = function(id, propertyName, typeName, minValue, maxValue) {
+        this.id = id;
+        this.propertyName = propertyName;
+        this.typeName = typeName;
+
+        this.activeRow = 0;
+        var elemPrefix = '#slider' + id + '_' + propertyName;
+        this.coarseElem = $(elemPrefix + '_coarse');
+        this.fineElem = $(elemPrefix + '_fine');
+        this.valueElem = $(elemPrefix + '_value');
+
+        var coarsePrettify, finePrettify;
+        if (typeName === 'duration') {
+            var momentFormat;
+            if (maxValue >= 3600) {
+                momentFormat = "HH:mm:ss.S";
+            } else {
+                momentFormat = "mm:ss.S";
+            }
+
+            this.coarseStep = 0.1;
+            this.fineRange = 1.0;
+
+            coarsePrettify = function (num) {
+                var m = moment(num, "X");
+                return m.format(momentFormat);
+            };
+            finePrettify = function (num) {
+                if (num > 0) {
+                    return '+' + num.toFixed(3) + 's';
+                } else {
+                    return num.toFixed(3) + 's';
+                }
+            };
+        } else if (typeName === 'count') {
+            this.coarseStep = 0.1;
+            this.fineRange = 1;
+            coarsePrettify = function (num) {
+                return num.toFixed(1);
+            };
+            finePrettify = function (num) {
+                return num.toFixed(3);
+            };
+        } else if (typeName === 'ratepermin') {
+            this.coarseStep = 0.1;
+            this.fineRange = 1.0;
+            coarsePrettify = function (num) {
+                return num.toFixed(1);
+            };
+            finePrettify = function (num) {
+                return num.toFixed(3);
+            };
+        } else {
+            console.log('Bad typeName ' + typeName)
+        }
+
+
+        var coarseOnChange = function(obj) {
+            this.fineSlider.reset();
+            this.publishValueChange(true);
+        };
+
+        var coarseOnFinish = function(obj) {
+            this.fineSlider.reset();
+            this.publishValueChange(false);
+        };
+
+        this.coarseElem.ionRangeSlider({
+            min: minValue,
+            max: maxValue,
+            force_edges: true,
+            from: 0,
+            grid: true,
+            hide_min_max: true,
+            prettify: coarsePrettify,
+            scope: this,
+            step: this.coarseStep,
+            onChange: coarseOnChange,
+            onFinish: coarseOnFinish
+        });
+
+
+        var fineOnChange = function(obj) {
+            this.publishValueChange(true);
+        };
+
+        var fineOnFinish = function(obj) {
+            // Bring fine slider back to centre if it's at the extremes
+            var value = obj.from;
+            var truncValue = Math.trunc(value / obj.max) * obj.max;
+            if (truncValue <= obj.min || truncValue >= obj.max) {
+                var coarseValue = this.coarseSlider.result.from;
+                this.coarseSlider.update({from: coarseValue + truncValue});
+                this.fineSlider.update({from: value - truncValue});
+            }
+            this.publishValueChange(false);
+        };
+
+        this.fineElem.ionRangeSlider({
+            min: -this.fineRange,
+            max: this.fineRange,
+            from: 0,
+            grid: true,
+            force_edges: true,
+            prettify: finePrettify,
+            onChange: fineOnChange,
+            onFinish: fineOnFinish,
+            scope: this,
+            step: 0.001
+        });
+
+
+        this.coarseSlider = this.coarseElem.data("ionRangeSlider");
+        this.fineSlider = this.fineElem.data("ionRangeSlider");
+
+        Backbone.Mediator.subscribe('mt:selectionChange', this.onSelectionChange, this);
+        Backbone.Mediator.subscribe('mt:valueChange', this.onValueChange, this);
+
+        return this;
+    };
+
     this.setValue = function(value) {
         var coarseValue = Math.floor(value / this.coarseStep) * this.coarseStep;
         var fineValue = value - coarseValue;
@@ -42,105 +163,19 @@ function MtControlShuttle () {
     };
 
 
-    this.publishValueChange = function(value) {
+    this.publishValueChange = function(inProgress) {
         var eventId = 'mt:valueChange';
         var value = this.coarseSlider.result.from + this.fineSlider.result.from;
         Backbone.Mediator.publish(eventId, {
             changes: [{property: this.propertyName, row: this.activeRow, value: value}],
             id: this.id,
+            inProgress: inProgress,
             source: 'slider'
         });
     };
 
 
-    this.create = function(id, propertyName, typeName, durationSecs) {
-        this.id = id;
-        this.propertyName = propertyName;
-        this.typeName = typeName;
 
-        this.activeRow = 0;
-        var elemPrefix = '#slider' + id + '_' + propertyName;
-        this.coarseElem = $(elemPrefix + '_coarse');
-        this.fineElem = $(elemPrefix + '_fine');
-        this.valueElem = $(elemPrefix + '_value');
-
-        var momentFormat;
-        if (durationSecs >= 3600) {
-            momentFormat = "HH:mm:ss.S";
-        } else {
-            momentFormat = "mm:ss.S";
-        }
-
-        this.coarseStep = 0.1;
-        this.fineRange = 1.0;
-
-        var coarseOnChange = function(obj) {
-            this.fineSlider.reset();
-            this.publishValueChange();
-        };
-
-        this.coarseElem.ionRangeSlider({
-            min: 0,
-            max: durationSecs,
-            force_edges: true,
-            from: 0,
-            grid: true,
-            hide_min_max: true,
-            prettify: function (num) {
-                var m = moment(num, "X");
-                return m.format(momentFormat);
-            },
-            scope: this,
-            step: this.coarseStep,
-            onChange: coarseOnChange
-        });
-
-
-        var fineOnChange = function(obj) {
-            var value = obj.from;
-            var truncValue = Math.trunc(value / obj.max) * obj.max;
-            this.publishValueChange();
-        };
-
-        var fineOnFinish = function(obj) {
-            var value = obj.from;
-            var truncValue = Math.trunc(value / obj.max) * obj.max;
-            if (truncValue <= obj.min || truncValue >= obj.max) {
-                var coarseValue = this.coarseSlider.result.from;
-                this.coarseSlider.update({from: coarseValue + truncValue});
-                this.fineSlider.update({from: value - truncValue});
-            }
-            this.publishValueChange();
-        };
-
-        this.fineElem.ionRangeSlider({
-            min: -this.fineRange,
-            max: this.fineRange,
-            from: 0,
-            grid: true,
-            force_edges: true,
-            prettify: function (num) {
-                if (num > 0) {
-                    return '+' + num.toFixed(3) + 's';
-                } else {
-                    return num.toFixed(3) + 's';
-                }
-            },
-            onChange: fineOnChange,
-            onFinish: fineOnFinish,
-            scope: this,
-            step: 0.001
-        });
-
-
-        this.coarseSlider = this.coarseElem.data("ionRangeSlider");
-        this.fineSlider = this.fineElem.data("ionRangeSlider");
-
-        Backbone.Mediator.subscribe('mt:selectionChange', this.onSelectionChange, this);
-        Backbone.Mediator.subscribe('mt:valueChange', this.onValueChange, this);
-
-        return this;
-    };
 };
 
 
@@ -148,9 +183,10 @@ function MtControlInterval () {
 
     this.create = function(id, durationSecs) {
         this.shuttles = {
-            start_time: new MtControlShuttle().create(id, 'start_time', 'duration', durationSecs),
-            end_time: new MtControlShuttle().create(id, 'end_time', 'duration', durationSecs),
-            num_events:  new MtControlShuttle().create(id, 'num_events', 'count', durationSecs)
+            start_time: new MtControlShuttle().create(id, 'start_time', 'duration', 0, durationSecs),
+            end_time: new MtControlShuttle().create(id, 'end_time', 'duration', 0, durationSecs),
+            num_events:  new MtControlShuttle().create(id, 'num_events', 'count', 0, 200),
+            rate:  new MtControlShuttle().create(id, 'rate', 'ratepermin', 10, 60)
         };
     };
 };

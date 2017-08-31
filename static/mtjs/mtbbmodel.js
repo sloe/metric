@@ -155,15 +155,17 @@ function MtInterval () {
         this.columnAttrs = [
             'start_time',
             'end_time',
-            'num_events'
+            'num_events',
+            'rate'
         ];
 
         this.hot = new Handsontable(this.containerElem, {
-            colHeaders: ['Start', 'End', 'Number'],
+            colHeaders: ['Start', 'End', 'Number', 'Rate'],
             columns: [
                 columnFn('start_time'),
                 columnFn('end_time'),
-                columnFn('num_events')
+                columnFn('num_events'),
+                columnFn('rate')
             ],
             contextMenu: true,
             data: this.intervals,
@@ -172,12 +174,13 @@ function MtInterval () {
             manualColumnResize: true,
             minSpareRows: 1,
             minSpareCols: 1,
-            outsideClickDeselects : true,
+            outsideClickDeselects : false,
             rowHeaders: true
         });
 
 
         this.intervals.on('all', this.intervalsOnAll, this);
+        this.intervals.on('change', this.intervalsOnChange, this);
         this.hot.addHook('afterChange', this.tableAfterChange.bind(this));
         this.hot.addHook('afterSelectionEnd', this.tableAfterSelectionEnd.bind(this));
 
@@ -196,13 +199,27 @@ function MtInterval () {
         console.log(message);
     };
 
+
+    this.intervalsOnChange = function(model, options) {
+        var message = ['MtInterval.intervalsOnChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
+        console.log(message);
+
+        if (!options.originator && model.changed) {
+            options.originator = _.keys(model.changed)[0]
+        }
+
+        this.recalculate(model, options);
+    };
+
+
     this.tableAfterChange = function(changes, source) {
         if (source === 'edit' || source === 'CopyPaste.paste') {
             _.each(changes, function(change) {
+                var row = change[0];
                 var property = change[1]();
                 var value = change[3];
                 Backbone.Mediator.publish('mt:valueChange', {
-                    changes: [{property: property, value: value}],
+                    changes: [{property: property, row: row, value: value}],
                     id: this.id,
                     source: 'table'
                 });
@@ -246,8 +263,8 @@ function MtInterval () {
 
 
     this.onValueChange = function(event) {
-        if (event.id === this.id && event.source !== 'table') {
-            console.log('MtInterval.onValueChange: ' + JSON.stringify(event));
+        console.log('MtInterval.onValueChange: ' + JSON.stringify(event));
+        if (event.id === this.id & event.source !== 'table') {
             _.each(event.changes, function(change) {
                 var selectedModel = this.intervals.at(change.row);
                 var setParams = {};
@@ -258,13 +275,32 @@ function MtInterval () {
             if (event.source === 'slider' && event.changes && event.changes.length === 1) {
                 var change = event.changes[0];
                 var column = this.propertyNameToColumn(change.property);
-                var selection = this.hot.getSelected();
-                if (!selection || selection[0] !== change.row || selection[1] !== column) {
-                    this.hot.selection.setRangeStart(new CellCoords(change.row, column));
-                    this.hot.selection.setRangeEnd(new CellCoords(change.row, column));
+                if (event.inProgress) {
+                    // This is a slider drag so we mustn't steal the focus
+                    var selection = this.hot.getSelected();
+                    if (!selection || selection[0] !== change.row || selection[1] !== column) {
+                        this.hot.selection.setRangeStart(new CellCoords(change.row, column));
+                        this.hot.selection.setRangeEnd(new CellCoords(change.row, column));
+                    }
+                } else {
+                    this.hot.selectCell(change.row, column, change.row, column);
                 }
             }
+
             this.hot.render();
+        }
+    };
+
+    this.recalculate = function(interval, options) {
+        var attr = interval.attributes;
+        if (options.originator !== 'rate' && _.isUndefined(interval.changed.rate)) {
+            // num_events was changed by the user so recaculate the rate based on it
+            var newRate = (attr.num_events * 60) / (attr.end_time - attr.start_time) ;
+            interval.set({rate: newRate}, options);
+        } else if (options.originator === 'rate' && _.isUndefined(interval.changed.num_events)) {
+            // rate was changed by the user so recaculate the number of events based on it
+            var newNumEvents = Math.round((attr.end_time - attr.start_time) * attr.rate / 60);
+            interval.set({num_events: newNumEvents}, options);
         }
     };
 };
