@@ -21,9 +21,11 @@ var MtIntervalCollection = Backbone.Collection.extend({
     model: MtIntervalModel,
     splice: MtUtil.emulateSplice,
 
-    initialize: function() {
+    initialize: function(id) {
+        this.id = id;
         this.on('all', this.onAll, this);
         this.on('change', this.onChange, this);
+        Backbone.Mediator.subscribe('mt:controlChangedValue', this.onMtControlChangedValue, this);
     },
 
     makeDefault: function() {
@@ -35,12 +37,12 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
     onAll: function(event, model) {
         var now = new Date();
-        var message = ['MtInterval.onAll: ', now.getSeconds(), ':', now.getMilliseconds(), ' [' + event + '] ', JSON.stringify(model)].join('');
+        var message = ['MtIntervalCollection.onAll: ', now.getSeconds(), ':', now.getMilliseconds(), ' [' + event + '] ', JSON.stringify(model)].join('');
         console.log(message);
     },
 
     onChange: function(model, options) {
-        var message = ['MtInterval.onChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
+        var message = ['MtIntervalCollection.onChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
         console.log(message);
 
         if (!options.originator && model.changed) {
@@ -50,7 +52,17 @@ var MtIntervalCollection = Backbone.Collection.extend({
         model.recalculate(options);
     },
 
-
+    onMtControlChangedValue: function(event) {
+        console.log('MtIntervalCollection.onMtControlChangedValue: ' + JSON.stringify(event));
+        if (event.options.id === this.id) {
+            _.each(event.changes, function(change) {
+                var selectedModel = this.at(change.row);
+                var setParams = {};
+                setParams[change.property] = change.value;
+                selectedModel.set(setParams, event.options);
+            }, this);
+        }
+    }
 });
 
 function MtInterval () {
@@ -62,7 +74,7 @@ function MtInterval () {
         //addCar = document.getElementById('add_car'),
         //eventHolder = document.getElementById('example1_events'),
 
-        this.intervals = new MtIntervalCollection();
+        this.intervals = new MtIntervalCollection(id);
 
         this.intervals.makeDefault();
 
@@ -110,20 +122,14 @@ function MtInterval () {
             rowHeaders: true
         });
 
-
-        this.hot.addHook('afterChange', this.tableAfterChange.bind(this));
         this.hot.addHook('afterSelectionEnd', this.tableAfterSelectionEnd.bind(this));
-
-        Backbone.Mediator.subscribe('mt:valueChange', this.onValueChange, this);
+        this.intervals.on('change', this.onValueChange, this);
     };
 
 
     this.propertyNameToColumn = function(propertyName) {
         return this.columnAttrs.indexOf(propertyName);
     };
-
-
-
 
 
     this.tableAfterChange = function(changes, source) {
@@ -176,28 +182,22 @@ function MtInterval () {
     };
 
 
-    this.onValueChange = function(event) {
-        console.log('MtInterval.onValueChange: ' + JSON.stringify(event));
-        if (event.id === this.id & event.source !== 'table') {
-            _.each(event.changes, function(change) {
-                var selectedModel = this.intervals.at(change.row);
-                var setParams = {};
-                setParams[change.property] = change.value;
-                selectedModel.set(setParams);
-            }, this);
-
-            if (event.source === 'slider' && event.changes && event.changes.length === 1) {
-                var change = event.changes[0];
-                var column = this.propertyNameToColumn(change.property);
-                if (event.inProgress) {
+    this.onValueChange = function(model, options) {
+        console.log('MtInterval.onValueChange: ' + JSON.stringify(model) + JSON.stringify(options));
+        if (options.id === this.id & options.source !== 'table') {
+            if (options.source === 'slider' && model.changed && _.keys(model.changed).length >= 1) {
+                var property = _.keys(model.changed)[0];
+                var value = model.changed[property];
+                var column = this.propertyNameToColumn(property);
+                if (options.inProgress) {
                     // This is a slider drag so we mustn't steal the focus
                     var selection = this.hot.getSelected();
-                    if (!selection || selection[0] !== change.row || selection[1] !== column) {
-                        this.hot.selection.setRangeStart(new CellCoords(change.row, column));
-                        this.hot.selection.setRangeEnd(new CellCoords(change.row, column));
+                    if (!selection || selection[0] !== options.row || selection[1] !== column) {
+                        this.hot.selection.setRangeStart(new CellCoords(options.row, column));
+                        this.hot.selection.setRangeEnd(new CellCoords(options.row, column));
                     }
                 } else {
-                    this.hot.selectCell(change.row, column, change.row, column);
+                    this.hot.selectCell(options.row, column, options.row, column);
                 }
             }
 

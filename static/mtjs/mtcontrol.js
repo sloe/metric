@@ -62,12 +62,12 @@ function MtControlShuttle () {
 
         var coarseOnChange = function(obj) {
             this.fineSlider.reset();
-            this.publishValueChange(true);
+            this.publishControlChangedValue(true);
         };
 
         var coarseOnFinish = function(obj) {
             this.fineSlider.reset();
-            this.publishValueChange(false);
+            this.publishControlChangedValue(false);
         };
 
         this.coarseElem.ionRangeSlider({
@@ -86,7 +86,7 @@ function MtControlShuttle () {
 
 
         var fineOnChange = function(obj) {
-            this.publishValueChange(true);
+            this.publishControlChangedValue(true);
         };
 
         var fineOnFinish = function(obj) {
@@ -98,7 +98,7 @@ function MtControlShuttle () {
                 this.coarseSlider.update({from: coarseValue + truncValue});
                 this.fineSlider.update({from: value - truncValue});
             }
-            this.publishValueChange(false);
+            this.publishControlChangedValue(false);
         };
 
         this.fineElem.ionRangeSlider({
@@ -163,19 +163,24 @@ function MtControlShuttle () {
     };
 
 
-    this.publishValueChange = function(inProgress) {
-        var eventId = 'mt:valueChange';
+    this.publishControlChangedValue = function(inProgress) {
+        var eventId = 'mt:controlChangedValue';
         var value = this.coarseSlider.result.from + this.fineSlider.result.from;
         Backbone.Mediator.publish(eventId, {
-            changes: [{property: this.propertyName, row: this.activeRow, value: value}],
-            id: this.id,
-            inProgress: inProgress,
-            source: 'slider'
+            changes: [{
+                property: this.propertyName,
+                row: this.activeRow,
+                value: value
+            }],
+            options: {
+                id: this.id,
+                inProgress: inProgress,
+                originator: this.propertyName,
+                row: this.activeRow,
+                source: 'slider'
+            }
         });
     };
-
-
-
 };
 
 
