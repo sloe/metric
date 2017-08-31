@@ -3,6 +3,15 @@
 
 function MtControlShuttle () {
 
+    this.setValue = function(value) {
+        var coarseValue = Math.floor(value / this.coarseStep) * this.coarseStep;
+        var fineValue = value - coarseValue;
+        this.coarseSlider.update({from: coarseValue});
+        this.fineSlider.update({from: fineValue});
+        this.valueElem.text(value);
+    };
+
+
     this.onValueChange = function(event) {
         if (event.id === this.id) {
             _.each(event.changes, function(change) {
@@ -14,10 +23,7 @@ function MtControlShuttle () {
             if (event.source !== 'slider') { // Don't respond to our own events
                 _.each(event.changes, function(change) {
                     if (change.property === this.propertyName) {
-                        var coarseValue = Math.floor(change.value / this.coarseStep) * this.coarseStep;
-                        var fineValue = change.value - coarseValue;
-                        this.coarseSlider.update({from: coarseValue});
-                        this.fineSlider.update({from: fineValue});
+                        this.setValue(change.value);
                     }
                 }, this);
             }
@@ -26,7 +32,11 @@ function MtControlShuttle () {
 
 
     this.onSelectionChange = function(event) {
-        if (event.id === this.id) {
+        if (event.id === this.id && this.activeRow !== event.activeRow) {
+            this.activeRow = event.activeRow;
+            if (!_.isUndefined(event.values[this.propertyName])) {
+                this.setValue(event.values[this.propertyName]);
+            }
             console.log('MtControlShuttle.onSelectionChange: ' + JSON.stringify(event));
         }
     };
@@ -36,7 +46,7 @@ function MtControlShuttle () {
         var eventId = 'mt:valueChange';
         var value = this.coarseSlider.result.from + this.fineSlider.result.from;
         Backbone.Mediator.publish(eventId, {
-            changes: [{property: this.propertyName, value: value}],
+            changes: [{property: this.propertyName, row: this.activeRow, value: value}],
             id: this.id,
             source: 'slider'
         });
@@ -48,6 +58,7 @@ function MtControlShuttle () {
         this.propertyName = propertyName;
         this.typeName = typeName;
 
+        this.activeRow = 0;
         var elemPrefix = '#slider' + id + '_' + propertyName;
         this.coarseElem = $(elemPrefix + '_coarse');
         this.fineElem = $(elemPrefix + '_fine');
