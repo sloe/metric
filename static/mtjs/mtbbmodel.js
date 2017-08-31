@@ -1,121 +1,56 @@
 
-
-
-// FIXME
-
-/**
- * CellCoords holds cell coordinates (row, column) and few method to validate them and
- * retrieve as an array or an object
- *
- * @class CellCoords
- */
-class CellCoords {
-  /**
-   * @param {Number} row Row index
-   * @param {Number} col Column index
-   */
-  constructor(row, col) {
-    if (typeof row !== 'undefined' && typeof col !== 'undefined') {
-      this.row = row;
-      this.col = col;
-
-    } else {
-      this.row = null;
-      this.col = null;
-    }
-  }
-
-  /**
-   * Checks if given set of coordinates is valid in context of a given Walkontable instance
-   *
-   * @param {Walkontable} wotInstance
-   * @returns {Boolean}
-   */
-  isValid(wotInstance) {
-    // is it a valid cell index (0 or higher)
-    if (this.row < 0 || this.col < 0) {
-      return false;
-    }
-    // is selection within total rows and columns
-    if (this.row >= wotInstance.getSetting('totalRows') || this.col >= wotInstance.getSetting('totalColumns')) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Checks if this cell coords are the same as cell coords given as a parameter
-   *
-   * @param {CellCoords} cellCoords
-   * @returns {Boolean}
-   */
-  isEqual(cellCoords) {
-    if (cellCoords === this) {
-      return true;
-    }
-
-    return this.row === cellCoords.row && this.col === cellCoords.col;
-  }
-
-  /**
-   * Checks if tested coordinates are positioned in south-east from this cell coords
-   *
-   * @param {Object} testedCoords
-   * @returns {Boolean}
-   */
-  isSouthEastOf(testedCoords) {
-    return this.row >= testedCoords.row && this.col >= testedCoords.col;
-  }
-
-  /**
-   * Checks if tested coordinates are positioned in north-east from this cell coords
-   *
-   * @param {Object} testedCoords
-   * @returns {Boolean}
-   */
-  isNorthWestOf(testedCoords) {
-    return this.row <= testedCoords.row && this.col <= testedCoords.col;
-  }
-
-  /**
-   * Checks if tested coordinates are positioned in south-west from this cell coords
-   *
-   * @param {Object} testedCoords
-   * @returns {Boolean}
-   */
-  isSouthWestOf(testedCoords) {
-    return this.row >= testedCoords.row && this.col <= testedCoords.col;
-  }
-
-  /**
-   * Checks if tested coordinates are positioned in north-east from this cell coords
-   *
-   * @param {Object} testedCoords
-   * @returns {Boolean}
-   */
-  isNorthEastOf(testedCoords) {
-    return this.row <= testedCoords.row && this.col >= testedCoords.col;
-  }
-}
-
-// END FIXME
-
-
 "use strict";
 
-var MtIntervalModel = Backbone.Model.extend({});
+var MtIntervalModel = Backbone.Model.extend({
+    recalculate: function(options) {
+        var attr = this.attributes;
+        if (options.originator !== 'rate' && _.isUndefined(this.changed.rate)) {
+            // num_events was changed by the user so recaculate the rate based on it
+            var newRate = (attr.num_events * 60) / (attr.end_time - attr.start_time) ;
+            this.set({rate: newRate}, options);
+        } else if (options.originator === 'rate' && _.isUndefined(this.changed.num_events)) {
+            // rate was changed by the user so recaculate the number of events based on it
+            var newNumEvents = Math.round((attr.end_time - attr.start_time) * attr.rate / 60);
+            this.set({num_events: newNumEvents}, options);
+        }
+    }
+});
 
-function _emulateSplice(index, howMany) {
-    var args = _.toArray(arguments).slice(2).concat({at: index});
-    var removed = this.models.slice(index, index + howMany);
-    this.remove(removed).add.apply(this, args);
-    return removed;
-};
 
 var MtIntervalCollection = Backbone.Collection.extend({
     model: MtIntervalModel,
-    splice: _emulateSplice
+    splice: MtUtil.emulateSplice,
+
+    initialize: function() {
+        this.on('all', this.onAll, this);
+        this.on('change', this.onChange, this);
+    },
+
+    makeDefault: function() {
+        this.add([
+            {start_time: 1, end_time: 21, num_events: 10},
+            {start_time: 23, end_time: 23, num_events: 14}
+        ]);
+    },
+
+    onAll: function(event, model) {
+        var now = new Date();
+        var message = ['MtInterval.onAll: ', now.getSeconds(), ':', now.getMilliseconds(), ' [' + event + '] ', JSON.stringify(model)].join('');
+        console.log(message);
+    },
+
+    onChange: function(model, options) {
+        var message = ['MtInterval.onChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
+        console.log(message);
+
+        if (!options.originator && model.changed) {
+            options.originator = _.keys(model.changed)[0]
+        }
+
+        model.recalculate(options);
+    },
+
+
 });
 
 function MtInterval () {
@@ -129,10 +64,7 @@ function MtInterval () {
 
         this.intervals = new MtIntervalCollection();
 
-        this.intervals.add([
-            {start_time: 1, end_time: 21, num_events: 10},
-            {start_time: 23, end_time: 23, num_events: 14}
-        ]);
+        this.intervals.makeDefault();
 
         function makeInterval() {
             return new MtIntervalModel();
@@ -179,8 +111,6 @@ function MtInterval () {
         });
 
 
-        this.intervals.on('all', this.intervalsOnAll, this);
-        this.intervals.on('change', this.intervalsOnChange, this);
         this.hot.addHook('afterChange', this.tableAfterChange.bind(this));
         this.hot.addHook('afterSelectionEnd', this.tableAfterSelectionEnd.bind(this));
 
@@ -193,23 +123,7 @@ function MtInterval () {
     };
 
 
-    this.intervalsOnAll = function(event, model) {
-        var now = new Date();
-        var message = ['intervalsOnAll: ', now.getSeconds(), ':', now.getMilliseconds(), ' [' + event + '] ', JSON.stringify(model)].join('');
-        console.log(message);
-    };
 
-
-    this.intervalsOnChange = function(model, options) {
-        var message = ['MtInterval.intervalsOnChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
-        console.log(message);
-
-        if (!options.originator && model.changed) {
-            options.originator = _.keys(model.changed)[0]
-        }
-
-        this.recalculate(model, options);
-    };
 
 
     this.tableAfterChange = function(changes, source) {
@@ -291,18 +205,7 @@ function MtInterval () {
         }
     };
 
-    this.recalculate = function(interval, options) {
-        var attr = interval.attributes;
-        if (options.originator !== 'rate' && _.isUndefined(interval.changed.rate)) {
-            // num_events was changed by the user so recaculate the rate based on it
-            var newRate = (attr.num_events * 60) / (attr.end_time - attr.start_time) ;
-            interval.set({rate: newRate}, options);
-        } else if (options.originator === 'rate' && _.isUndefined(interval.changed.num_events)) {
-            // rate was changed by the user so recaculate the number of events based on it
-            var newNumEvents = Math.round((attr.end_time - attr.start_time) * attr.rate / 60);
-            interval.set({num_events: newNumEvents}, options);
-        }
-    };
+
 };
 
 
