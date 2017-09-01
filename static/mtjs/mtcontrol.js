@@ -9,6 +9,8 @@ function MtControlShuttle () {
         this.typeName = typeName;
 
         this.activeRow = 0;
+        this.sourceName = 'slider:' + propertyName;
+
         var elemPrefix = '#slider' + id + '_' + propertyName;
         this.coarseElem = $(elemPrefix + '_coarse');
         this.fineElem = $(elemPrefix + '_fine');
@@ -62,12 +64,13 @@ function MtControlShuttle () {
 
         var coarseOnChange = function(obj) {
             this.fineSlider.reset();
-            this.publishControlChangedValue(true);
+            this.publishControlChangedValue();
         };
 
         var coarseOnFinish = function(obj) {
             this.fineSlider.reset();
-            this.publishControlChangedValue(false);
+            this.publishControlChangedValue();
+            this.publishControlFinish();
         };
 
         this.coarseElem.ionRangeSlider({
@@ -86,7 +89,7 @@ function MtControlShuttle () {
 
 
         var fineOnChange = function(obj) {
-            this.publishControlChangedValue(true);
+            this.publishControlChangedValue();
         };
 
         var fineOnFinish = function(obj) {
@@ -98,7 +101,8 @@ function MtControlShuttle () {
                 this.coarseSlider.update({from: coarseValue + truncValue});
                 this.fineSlider.update({from: value - truncValue});
             }
-            this.publishControlChangedValue(false);
+            this.publishControlChangedValue();
+            this.publishControlFinish();
         };
 
         this.fineElem.ionRangeSlider({
@@ -119,10 +123,11 @@ function MtControlShuttle () {
         this.fineSlider = this.fineElem.data("ionRangeSlider");
 
         Backbone.Mediator.subscribe('mt:selectionChange', this.onSelectionChange, this);
-        Backbone.Mediator.subscribe('mt:valueChange', this.onValueChange, this);
+        Backbone.Mediator.subscribe('mt:collectionValueChange', this.onMtCollectionValueChange, this);
 
         return this;
     };
+
 
     this.setValue = function(value) {
         var coarseValue = Math.floor(value / this.coarseStep) * this.coarseStep;
@@ -133,18 +138,18 @@ function MtControlShuttle () {
     };
 
 
-    this.onValueChange = function(event) {
-        if (event.id === this.id) {
-            _.each(event.changes, function(change) {
-                if (change.property === this.propertyName) {
-                    this.valueElem.text(change.value);
+    this.onMtCollectionValueChange = function(model, options) {
+        if (model.collection.id === this.id && model.changed) {
+            _.each(model.changed, function(value, property) {
+                if (property === this.propertyName) {
+                    this.valueElem.text(value);
                 }
             }, this);
 
-            if (event.source !== 'slider') { // Don't respond to our own events
-                _.each(event.changes, function(change) {
-                    if (change.property === this.propertyName) {
-                        this.setValue(change.value);
+            if (options.source !== this.sourceName) { // Don't respond to our own events
+                _.each(model.changed, function(value, property) {
+                    if (property === this.propertyName) {
+                        this.setValue(value);
                     }
                 }, this);
             }
@@ -163,10 +168,9 @@ function MtControlShuttle () {
     };
 
 
-    this.publishControlChangedValue = function(inProgress) {
-        var eventId = 'mt:controlChangedValue';
+    this._changeEventData = function() {
         var value = this.coarseSlider.result.from + this.fineSlider.result.from;
-        Backbone.Mediator.publish(eventId, {
+        return {
             changes: [{
                 property: this.propertyName,
                 row: this.activeRow,
@@ -174,12 +178,22 @@ function MtControlShuttle () {
             }],
             options: {
                 id: this.id,
-                inProgress: inProgress,
                 originator: this.propertyName,
                 row: this.activeRow,
-                source: 'slider'
+                source: this.sourceName
             }
-        });
+        };
+    }
+
+    this.publishControlChangedValue = function() {
+        var eventId = 'mt:controlChangedValue';
+        Backbone.Mediator.publish(eventId, this._changeEventData());
+    };
+
+
+    this.publishControlFinish = function() {
+        var eventId = 'mt:controlFinish';
+        Backbone.Mediator.publish(eventId, this._changeEventData());
     };
 };
 

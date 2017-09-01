@@ -41,6 +41,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
         console.log(message);
     },
 
+
     onChange: function(model, options) {
         var message = ['MtIntervalCollection.onChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
         console.log(message);
@@ -50,7 +51,10 @@ var MtIntervalCollection = Backbone.Collection.extend({
         }
 
         model.recalculate(options);
+
+        Backbone.Mediator.publish('mt:collectionValueChange', model, options);
     },
+
 
     onMtControlChangedValue: function(event) {
         console.log('MtIntervalCollection.onMtControlChangedValue: ' + JSON.stringify(event));
@@ -90,7 +94,7 @@ function MtInterval () {
                     } else if (_.isUndefined(value)) {
                         return interval.get(name);
                     } else {
-                        interval.set(name, value);
+                        interval.set(name, value, {source: 'table'});
                     }
                 },
             };
@@ -123,32 +127,14 @@ function MtInterval () {
         });
 
         this.hot.addHook('afterSelectionEnd', this.tableAfterSelectionEnd.bind(this));
-        this.intervals.on('change', this.onValueChange, this);
+
+        Backbone.Mediator.subscribe('mt:collectionValueChange', this.onMtCollectionValueChange, this);
+        Backbone.Mediator.subscribe('mt:controlFinish', this.onMtControlFinish, this);
     };
 
 
     this.propertyNameToColumn = function(propertyName) {
         return this.columnAttrs.indexOf(propertyName);
-    };
-
-
-    this.tableAfterChange = function(changes, source) {
-        if (source === 'edit' || source === 'CopyPaste.paste') {
-            _.each(changes, function(change) {
-                var row = change[0];
-                var property = change[1]();
-                var value = change[3];
-                Backbone.Mediator.publish('mt:valueChange', {
-                    changes: [{property: property, row: row, value: value}],
-                    id: this.id,
-                    source: 'table'
-                });
-            }, this);
-        } else {
-            var now = new Date();
-            var message = ['tableAfterChange: ', now.getSeconds(), ':', now.getMilliseconds(), ' ', source, ''];
-            console.log(message.join(''));
-        }
     };
 
 
@@ -182,24 +168,35 @@ function MtInterval () {
     };
 
 
-    this.onValueChange = function(model, options) {
-        console.log('MtInterval.onValueChange: ' + JSON.stringify(model) + JSON.stringify(options));
-        if (options.id === this.id & options.source !== 'table') {
-            if (options.source === 'slider' && model.changed && _.keys(model.changed).length >= 1) {
-                var property = _.keys(model.changed)[0];
-                var value = model.changed[property];
-                var column = this.propertyNameToColumn(property);
-                if (options.inProgress) {
-                    // This is a slider drag so we mustn't steal the focus
-                    var selection = this.hot.getSelected();
-                    if (!selection || selection[0] !== options.row || selection[1] !== column) {
-                        this.hot.selection.setRangeStart(new CellCoords(options.row, column));
-                        this.hot.selection.setRangeEnd(new CellCoords(options.row, column));
-                    }
-                } else {
-                    this.hot.selectCell(options.row, column, options.row, column);
-                }
+    this.onMtCollectionValueChange = function(model, options) {
+        console.log('MtInterval.onMtCollectionValueChange: ' + JSON.stringify(model) + JSON.stringify(options));
+
+        if (model.collection.id === this.id && model.changed && _.keys(model.changed).length >= 1 && options.source !== 'table') {
+            if (_.isUndefined(options.row)) {
+                console.log("Error: MtInterval.onMtCollectionValueChange undefined row");
             }
+            var property = _.keys(model.changed)[0];
+            var column = this.propertyNameToColumn(property);
+
+            // This could be a slider drag so we mustn't steal the focus
+            var selection = this.hot.getSelected();
+            if (!selection || selection[0] !== options.row || selection[1] !== column) {
+                this.hot.selection.setRangeStartOnly(new CellCoords(options.row, column));
+                this.hot.selection.setRangeEnd(new CellCoords(options.row, column), false);
+            }
+
+            this.hot.render();
+        }
+    };
+
+    this.onMtControlFinish = function(event) {
+        console.log('MtInterval.onMtControlFinish: ' + JSON.stringify(event));
+
+        var options = event.options;
+        if (options.id === this.id && event.changes && _.keys(event.changes).length >= 1 && options.source !== 'table') {
+            var change = event.changes[0];
+            var column = this.propertyNameToColumn(change.property);
+            this.hot.selectCell(options.row, column, options.row, column, false);
 
             this.hot.render();
         }
