@@ -23,13 +23,20 @@ function onYouTubeIframeAPIReady() {
 </script>
 
 <div id="intervaltable0"></div>
+<div id="paramtable0"></div>
 
 <script>
-  intervalModel = new MtInterval()
-  $(function () {
-    intervalModel.create(0);
-  });
+  var paramCollection = new MtParamCollection(null, {mtId: 0});
+  var intervalCollection = new MtIntervalCollection(null, {mtId: 0, mtParamProvider: paramCollection});
+  var intervalTable = new MtIntervalTable();
+  var paramTable = new MtParamTable();
 
+  $(function () {
+      intervalTable.create(0, intervalCollection);
+      intervalCollection.makeDefault();
+      paramTable.create(0, paramCollection);
+      paramCollection.makeDefault();
+  });
 </script>
 
 <div onclick="player.doPause()">{{=BUTTON("Pause")}}</div>

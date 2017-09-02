@@ -3,15 +3,15 @@
 
 function MtControlShuttle () {
 
-    this.create = function(id, propertyName, typeName, minValue, maxValue) {
-        this.id = id;
+    this.create = function(mtId, propertyName, typeName, minValue, maxValue) {
+        this.mtId = mtId;
         this.propertyName = propertyName;
         this.typeName = typeName;
 
         this.activeRow = 0;
         this.sourceName = 'slider:' + propertyName;
 
-        var elemPrefix = '#slider' + id + '_' + propertyName;
+        var elemPrefix = '#slider' + mtId + '_' + propertyName;
         this.coarseElem = $(elemPrefix + '_coarse');
         this.fineElem = $(elemPrefix + '_fine');
         this.valueElem = $(elemPrefix + '_value');
@@ -123,7 +123,7 @@ function MtControlShuttle () {
         this.fineSlider = this.fineElem.data("ionRangeSlider");
 
         Backbone.Mediator.subscribe('mt:selectionChange', this.onSelectionChange, this);
-        Backbone.Mediator.subscribe('mt:collectionValueChange', this.onMtCollectionValueChange, this);
+        Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
 
         return this;
     };
@@ -139,7 +139,7 @@ function MtControlShuttle () {
 
 
     this.onMtCollectionValueChange = function(model, options) {
-        if (model.collection.id === this.id && model.changed) {
+        if (model.collection.mtId === this.mtId && model.changed) {
             _.each(model.changed, function(value, property) {
                 if (property === this.propertyName) {
                     this.valueElem.text(value);
@@ -158,7 +158,7 @@ function MtControlShuttle () {
 
 
     this.onSelectionChange = function(event) {
-        if (event.id === this.id && this.activeRow !== event.activeRow) {
+        if (event.mtId === this.mtId && this.activeRow !== event.activeRow) {
             this.activeRow = event.activeRow;
             if (!_.isUndefined(event.values[this.propertyName])) {
                 this.setValue(event.values[this.propertyName]);
@@ -177,7 +177,7 @@ function MtControlShuttle () {
                 value: value
             }],
             options: {
-                id: this.id,
+                mtId: this.mtId,
                 originator: this.propertyName,
                 row: this.activeRow,
                 source: this.sourceName
@@ -200,12 +200,12 @@ function MtControlShuttle () {
 
 function MtControlInterval () {
 
-    this.create = function(id, durationSecs) {
+    this.create = function(mtId, durationSecs) {
         this.shuttles = {
-            start_time: new MtControlShuttle().create(id, 'start_time', 'duration', 0, durationSecs),
-            end_time: new MtControlShuttle().create(id, 'end_time', 'duration', 0, durationSecs),
-            num_events:  new MtControlShuttle().create(id, 'num_events', 'count', 0, 200),
-            rate:  new MtControlShuttle().create(id, 'rate', 'ratepermin', 10, 60)
+            start_time: new MtControlShuttle().create(mtId, 'start_time', 'duration', 0, durationSecs),
+            end_time: new MtControlShuttle().create(mtId, 'end_time', 'duration', 0, durationSecs),
+            num_events:  new MtControlShuttle().create(mtId, 'num_events', 'count', 0, 200),
+            rate:  new MtControlShuttle().create(mtId, 'rate', 'ratepermin', 10, 60)
         };
     };
 };
