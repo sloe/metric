@@ -11,14 +11,16 @@ def yt():
         alien_key = 'bwgCRdwWGzE';
     if not dataset_id:
         item = metric.item.get_or_create_item('yt', alien_key)
-        dataset_id = metric.dataset.create_new_dataset(item.id, 'yt', alien_key)
+        dataset_id = metric.dataset.create_dataset('yt', item.id)
         redirect(metric.url.make_item_url('yt', alien_key, dataset_id))
 
+    item_row = metric.item.get_item('yt', alien_key)
 
     response.view = 'i/view.html'
 
     return dict(
-      videoId='bwgCRdwWGzE'
+        item_row=item_row,
+        dataset_id=dataset_id
     )
 
 

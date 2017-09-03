@@ -13,6 +13,7 @@ response.menu = [
     ]),
     (T("Debug"), False, None, [
         (T("Albums"), False, URL("debug", "album"), []),
+        (T("Datasets"), False, URL("debug", "dataset"), []),
         (T("Items"), False, URL("debug", "item"), []),
         (T("Item types"), False, URL("debug", "itemtype"), []),
         (T("Users"), False, URL("debug", "user"), [])

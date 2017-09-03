@@ -22,7 +22,11 @@ var MtIntervalModel = Backbone.Model.extend({
 
 var MtIntervalCollection = Backbone.Collection.extend({
     model: MtIntervalModel,
+    parse: function(response){
+        return response.interval;
+    },
     splice: MtUtil.emulateSplice,
+    url: '/apiv1/interval/' + 1,
 
     initialize: function(models, options) {
         this.mtId = options.mtId;

@@ -5,6 +5,11 @@ def album():
     return dict(grid=grid)
 
 
+def dataset():
+    grid = SQLFORM.grid(db.t_mtdataset)
+    return dict(grid=grid)
+
+
 def item():
     grid = SQLFORM.grid(db.t_mtitem)
     return dict(grid=grid)

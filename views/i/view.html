@@ -8,7 +8,7 @@
 <script type="text/javascript"><!--
 player = new MtYouTubePlayer()
 function onYouTubeIframeAPIReady() {
-  // player.createPlayer('player', '{{=videoId}}');
+  // player.createPlayer('player', '{{=item_row.f_alien_key}}');
 }
 //->></script>
 <div id="player0"></div>
@@ -36,6 +36,7 @@ function onYouTubeIframeAPIReady() {
       intervalCollection.makeDefault();
       paramTable.create(0, paramCollection);
       paramCollection.makeDefault();
+      intervalCollection.fetch();
   });
 </script>
 
