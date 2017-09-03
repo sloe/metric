@@ -29,15 +29,20 @@ db.define_table(
 db.define_table(
     't_mtitemtype',
     Field("f_name", comment="Name of type"),
-    Field("f_key", comment="Type key, e.g. YOUTUBE"),
-    *__treenode_items()
+    Field("f_key", comment="Type key, e.g. yt", unique=True)
 )
 
 db.define_table(
     't_mtitem',
     Field("f_name", comment="Name of item"),
     Field("f_album", "reference t_mtalbum", comment="Album containing this item", requires=IS_IN_DB(db, 't_mtalbum.id', "%(f_name)s", zero=None)),
-    Field("f_sourceid", comment="Identifier within the source, e.g. bwgCRdwWGzE for YouTube"),
+    Field("f_alien_key", comment="Identifier within the source, e.g. bwgCRdwWGzE for YouTube"),
     Field("f_itemtype", "reference t_mtitemtype", comment="Item type", requires=IS_IN_DB(db, 't_mtitemtype.id', "%(f_name)s (%(f_key)s)", zero=None)),
     *__treenode_items()
+)
+
+
+db.define_table(
+    't_mtdataset',
+    Field("f_item", "reference t_mtitem", comment="Item", requires=IS_IN_DB(db, 't_mtitem.id', "%(f_name)s (%(f_id)d)", zero=None)),
 )

@@ -9,11 +9,11 @@ var MtIntervalModel = Backbone.Model.extend({
 
         if (options.originator === 'speed_factor'  || (options.originator !== 'rate' && _.isUndefined(this.changed.rate))) {
             // num_events or speed_factor was changed by the user so recaculate the rate based on it
-            var newRate = (attr.num_events * 60) / (speedFactor * (attr.end_time - attr.start_time));
+            var newRate = (attr.num_events * speedFactor * 60) / (attr.end_time - attr.start_time);
             this.set({rate: newRate}, options);
         } else if (options.originator === 'rate' && _.isUndefined(this.changed.num_events)) {
             // rate was changed by the user so recaculate the number of events based on it
-            var newNumEvents = Math.round((attr.end_time - attr.start_time) * attr.rate * speedFactor / 60);
+            var newNumEvents = Math.round((attr.end_time - attr.start_time) * attr.rate / (60 * speedFactor));
             this.set({num_events: newNumEvents}, options);
         }
     }

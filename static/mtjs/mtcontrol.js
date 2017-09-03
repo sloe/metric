@@ -28,11 +28,11 @@ function MtControlShuttle () {
             this.coarseStep = 0.1;
             this.fineRange = 1.0;
 
-            coarsePrettify = function (num) {
+            coarsePrettify = function(num) {
                 var m = moment(num, "X");
                 return m.format(momentFormat);
             };
-            finePrettify = function (num) {
+            finePrettify = function(num) {
                 if (num > 0) {
                     return '+' + num.toFixed(3) + 's';
                 } else {
@@ -40,25 +40,33 @@ function MtControlShuttle () {
                 }
             };
         } else if (typeName === 'count') {
-            this.coarseStep = 0.1;
+            this.coarseStep = 1;
             this.fineRange = 1;
-            coarsePrettify = function (num) {
-                return num.toFixed(1);
+            coarsePrettify = function(num) {
+                return num.toFixed(0);
             };
-            finePrettify = function (num) {
-                return num.toFixed(3);
+            finePrettify = function(num) {
+                if (num > 0) {
+                    return '+' + num.toFixed(3);
+                } else {
+                    return num.toFixed(3);
+                }
             };
         } else if (typeName === 'ratepermin') {
             this.coarseStep = 0.1;
             this.fineRange = 1.0;
-            coarsePrettify = function (num) {
+            coarsePrettify = function(num) {
                 return num.toFixed(1);
             };
-            finePrettify = function (num) {
-                return num.toFixed(3);
+            finePrettify = function(num) {
+                if (num > 0) {
+                    return '+' + num.toFixed(3);
+                } else {
+                    return num.toFixed(3);
+                }
             };
         } else {
-            console.log('Bad typeName ' + typeName)
+            console.log('Bad typeName ' + typeName);
         }
 
 

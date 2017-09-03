@@ -9,7 +9,7 @@ response.menu = [
         (T("Item Types"), False, URL("admin", "itemtype"), [])
     ]),
     (T("Item"), False, None, [
-        (T("View"), False, URL("item", "view"), [])
+        (T("View"), False, URL("i", "yt"), [])
     ]),
     (T("Debug"), False, None, [
         (T("Albums"), False, URL("debug", "album"), []),
