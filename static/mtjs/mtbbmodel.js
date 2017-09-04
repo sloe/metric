@@ -7,7 +7,7 @@ var MtIntervalModel = Backbone.Model.extend({
         var paramProvider = this.collection.mtParamProvider;
         var speedFactor = paramProvider.getParam('speed_factor');
 
-        if (options.originator === 'speed_factor'  || (options.originator !== 'rate' && _.isUndefined(this.changed.rate))) {
+        if (options.originator === 'speed_factor' || options.originator === 'sync' || (options.originator !== 'rate' && _.isUndefined(this.changed.rate))) {
             // num_events or speed_factor was changed by the user so recaculate the rate based on it
             var newRate = (attr.num_events * speedFactor * 60) / (attr.end_time - attr.start_time);
             this.set({rate: newRate}, options);
@@ -22,17 +22,18 @@ var MtIntervalModel = Backbone.Model.extend({
 
 var MtIntervalCollection = Backbone.Collection.extend({
     model: MtIntervalModel,
-    parse: function(response){
+    parse: function(response) {
         return response.interval;
     },
     splice: MtUtil.emulateSplice,
-    url: '/apiv1/interval/' + 1,
+    url: '/apiv1/interval/' + 7,
 
     initialize: function(models, options) {
         this.mtId = options.mtId;
         this.mtParamProvider = options.mtParamProvider;
         this.on('all', this.onAll, this);
         this.on('change', this.onChange, this);
+        this.on('sync', this.onSync, this);
         Backbone.Mediator.subscribe('mt:controlChangedValue', this.onMtControlChangedValue, this);
         Backbone.Mediator.subscribe('mt:paramCollectionValueChange', this.onMtParamCollectionValueChange, this);
     },
@@ -69,6 +70,20 @@ var MtIntervalCollection = Backbone.Collection.extend({
         model.recalculate(options);
 
         Backbone.Mediator.publish('mt:intervalCollectionValueChange', model, options);
+    },
+
+
+    onSync: function(collection_or_model, response, options) {
+        var message = ['MtIntervalCollection.onSync: ', JSON.stringify(collection_or_model), JSON.stringify(response), JSON.stringify(options)].join(', ');
+        console.log(message);
+
+        if (!options.originator) {
+            options.originator = 'sync'
+        }
+
+        _.each(this.models, function(model) {
+            model.recalculate(options);
+        });
     },
 
 

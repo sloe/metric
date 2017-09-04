@@ -53,6 +53,7 @@ function MtIntervalTable () {
         });
 
 
+        this.intervalCollection.on('sync', this.onIntervalCollectionSync, this);
         this.intervalCollection.on('update', this.onIntervalCollectionUpdate, this);
 
         this.hot.addHook('afterSelectionEnd', this.tableAfterSelectionEnd.bind(this));
@@ -67,10 +68,34 @@ function MtIntervalTable () {
     };
 
 
-    this.onIntervalCollectionUpdate = function(collection, options) {
-        console.log('MtParamTable.onIntervalCollectionUpdate: ' + (collection.mtName && collection.mtName()) + ', ' + JSON.stringify(options));
+    this.onIntervalCollectionSync = function(collection_or_model, response, options) {
+        console.log('MtIntervalTable.onIntervalCollectionSync: ' + (collection_or_model.mtName && collection_or_model.mtName())
+            + ', ' + JSON.stringify(response) + ', ' + JSON.stringify(options));
+
+        var selection = this.hot.getSelected();
+        if (_.isUndefined(selection)) {
+            this.hot.selectCell(0, 0, 0, 0, false);
+        } else {
+            var activeRow = selection[0]
+            var values = this.intervalCollection.at(activeRow).attributes;
+
+            Backbone.Mediator.publish('mt:selectionChange', {
+                activeRow: activeRow,
+                mtId: this.mtId,
+                selection: selection,
+                source: 'table',
+                values: values
+            });
+        }
         this.hot.render();
     };
+
+
+    this.onIntervalCollectionUpdate = function(collection, options) {
+        console.log('MtIntervalTable.onIntervalCollectionUpdate: ' + (collection.mtName && collection.mtName()) + ', ' + JSON.stringify(options));
+        this.hot.render();
+    };
+
 
     this.tableAfterSelectionEnd = function(r, c, r2, c2) {
         var selection =  {
@@ -105,20 +130,20 @@ function MtIntervalTable () {
     this.onMtCollectionValueChange = function(model, options) {
         console.log('MtIntervalTable.onMtCollectionValueChange: ' + JSON.stringify(model) + JSON.stringify(options));
 
-        if (model.collection.mtId === this.mtId && model.changed && _.keys(model.changed).length >= 1 && options.source !== 'table') {
+        if (model.collection.mtId === this.mtId && model.changed && _.keys(model.changed).length >= 1 && options.source !== 'sync' && options.source !== 'table') {
             if (_.isUndefined(options.row)) {
                 console.log("Error: MtIntervalTable.onMtCollectionValueChange undefined row");
-            }
-            var property = _.keys(model.changed)[0];
-            var column = this.propertyNameToColumn(property);
+            } else {
+                var property = _.keys(model.changed)[0];
+                var column = this.propertyNameToColumn(property);
 
-            // This could be a slider drag so we mustn't steal the focus
-            var selection = this.hot.getSelected();
-            if (!selection || selection[0] !== options.row || selection[1] !== column) {
-                this.hot.selection.setRangeStartOnly(new CellCoords(options.row, column));
-                this.hot.selection.setRangeEnd(new CellCoords(options.row, column), false);
+                // This could be a slider drag so we mustn't steal the focus
+                var selection = this.hot.getSelected();
+                if (!selection || selection[0] !== options.row || selection[1] !== column) {
+                    this.hot.selection.setRangeStartOnly(new CellCoords(options.row, column));
+                    this.hot.selection.setRangeEnd(new CellCoords(options.row, column), false);
+                }
             }
-
         }
 
         if (model.collection.mtId === this.mtId) {

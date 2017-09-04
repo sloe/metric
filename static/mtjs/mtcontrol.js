@@ -8,7 +8,7 @@ function MtControlShuttle () {
         this.propertyName = propertyName;
         this.typeName = typeName;
 
-        this.activeRow = 0;
+        this.activeRow = null;
         this.sourceName = 'slider:' + propertyName;
 
         var elemPrefix = '#slider' + mtId + '_' + propertyName;
