@@ -1,4 +1,7 @@
 
+import json
+import types
+
 from gluon import current
 from gluon.http import HTTP
 
@@ -25,8 +28,8 @@ def rest_handlers(name, table, field_name):
         else:
             if array_index >= len(data_array):
                 raise HTTP(400, "Data index %d out of range (<%d)" % (array_index, len(data_array)))
-            else:
-                response_data = data_array[array_index]
+
+            response_data = data_array[array_index]
 
         response_dict = {}
         response_dict[name] = response_data
@@ -36,10 +39,44 @@ def rest_handlers(name, table, field_name):
         return response_dict
 
 
-    def __rest_post(tablename, **fields):
-        if tablename != 'interval':
-            raise HTTP(400)
-        return db.person.t_mtitem(**fields)
+    def __rest_post(*args, **vars):
+        db, response = current.db, current.response
+        request_body = current.request.body.read()
+
+        row_id, array_index = metric.validator.row_id_array_index(args)
+
+        data_row = db(table.id == row_id).select(field_name).first()
+        if not data_row:
+            raise HTTP(400, "%s row id %d not found" % (name, row_id))
+
+        data_json = getattr(data_row, field_name)
+        if isinstance(data_json, types.StringTypes):
+            data_json = json.loads(data_json)
+
+        data_array = data_json.get('d', None)
+        if data_array is None:
+            raise HTTP(500, "Invalid database content")
+
+        if array_index is None:
+            raise HTTP(400, "Array index must be specified")
+
+        if array_index >= len(data_array):
+            raise HTTP(400, "Data index %d out of range (<%d)" % (array_index, len(data_array)))
+
+        post_data = json.loads(request_body)
+        data_array[array_index] = post_data
+        new_data_json_str = json.dumps(data_json)
+
+        result = db(table.id == row_id).validate_and_update(**{field_name: new_data_json_str})
+        if result.errors:
+            raise HTTP(500, "Update failed: %s" % result.errors)
+        db.commit()
+
+        response.view = 'returnsame.json'
+
+        # FIXME: Not yet sure what to return here
+        return dict(content="")
+
 
     def __rest_put(*args, **vars):
         return dict()

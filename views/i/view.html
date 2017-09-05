@@ -26,19 +26,35 @@ function onYouTubeIframeAPIReady() {
 <div id="paramtable0"></div>
 
 <script>
-  var paramCollection = new MtParamCollection(null, {mtId: 0});
-  var intervalCollection = new MtIntervalCollection(null, {mtId: 0, mtParamProvider: paramCollection});
-  var intervalTable = new MtIntervalTable();
-  var paramTable = new MtParamTable();
+var paramCollection = new MtParamCollection(null, {mtId: 0});
+var intervalCollection = new MtIntervalCollection(null, {mtId: 0, mtParamProvider: paramCollection});
+var intervalTable = new MtIntervalTable();
+var paramTable = new MtParamTable();
 
-  $(function () {
-      intervalTable.create(0, intervalCollection);
-      intervalCollection.makeDefault();
-      paramTable.create(0, paramCollection);
-      paramCollection.makeDefault();
-      intervalCollection.fetch();
-  });
+$(function () {
+    intervalTable.create(0, intervalCollection);
+    intervalCollection.makeDefault();
+    paramTable.create(0, paramCollection);
+    paramCollection.makeDefault();
+    intervalCollection.fetch();
+    $('#mt-sync-info').text('Data loaded');
+});
+
+function MtController() {
+    this.doSave = function() {
+        $('#mt-sync-info').text('Saving...');
+        intervalCollection.saveAll();
+        $('#mt-sync-info').text('All changes saved');
+    }
+};
+
+pageController = new MtController();
+
 </script>
+
+<div onclick="pageController.doSave();">{{=BUTTON("Save")}}</div>
+<div id="mt-sync-info">Loading...</div>
+<hr/>
 
 <div onclick="player.doPause()">{{=BUTTON("Pause")}}</div>
 <div onclick="player.doSeek(10)">{{=BUTTON("Seek")}}</div>

@@ -16,6 +16,12 @@ var MtIntervalModel = Backbone.Model.extend({
             var newNumEvents = Math.round((attr.end_time - attr.start_time) * attr.rate / (60 * speedFactor));
             this.set({num_events: newNumEvents}, options);
         }
+        if (options.originator !== 'sync') {
+            var row_index = this.collection.indexOf(this);
+            if (!_.isUndefined(row_index)) {
+                this.save(null, {url: this.collection.url + '/' + row_index});
+            }
+        }
     }
 });
 
@@ -49,6 +55,13 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
     mtName: function() {
         return 'MtIntervalCollection' + this.mtId;
+    },
+
+
+    saveAll: function() {
+        _.each(this.models, function(model, index) {
+            model.save({_index: index});
+        });
     },
 
 
@@ -106,7 +119,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
         _.each(this.models, function(model) {
             model.recalculate(options);
         });
-        }
+    }
 });
 
 
