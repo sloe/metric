@@ -176,7 +176,7 @@ function MtControlShuttle () {
     };
 
 
-    this._changeEventData = function() {
+    this._changeEventData = function(ongoing) {
         var value = this.coarseSlider.result.from + this.fineSlider.result.from;
         return {
             changes: [{
@@ -186,6 +186,7 @@ function MtControlShuttle () {
             }],
             options: {
                 mtId: this.mtId,
+                ongoing: ongoing,
                 originator: this.propertyName,
                 row: this.activeRow,
                 source: this.sourceName
@@ -195,13 +196,13 @@ function MtControlShuttle () {
 
     this.publishControlChangedValue = function() {
         var eventId = 'mt:controlChangedValue';
-        Backbone.Mediator.publish(eventId, this._changeEventData());
+        Backbone.Mediator.publish(eventId, this._changeEventData(true));
     };
 
 
     this.publishControlFinish = function() {
         var eventId = 'mt:controlFinish';
-        Backbone.Mediator.publish(eventId, this._changeEventData());
+        Backbone.Mediator.publish(eventId, this._changeEventData(false));
     };
 };
 

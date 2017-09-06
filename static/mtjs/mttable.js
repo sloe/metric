@@ -52,10 +52,16 @@ function MtIntervalTable () {
             rowHeaders: true
         });
 
+        // Handsontable will try to walk the datasource to derive the number of columns,
+        // which doesn;t work, so override it here
+        this.hot.countSourceCols = function() {
+            return 4;
+        }
 
         this.intervalCollection.on('sync', this.onIntervalCollectionSync, this);
         this.intervalCollection.on('update', this.onIntervalCollectionUpdate, this);
 
+        this.hot.addHook('afterRemoveRow', this.tableAfterRemoveRow.bind(this));
         this.hot.addHook('afterSelectionEnd', this.tableAfterSelectionEnd.bind(this));
 
         Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
@@ -94,6 +100,19 @@ function MtIntervalTable () {
     this.onIntervalCollectionUpdate = function(collection, options) {
         console.log('MtIntervalTable.onIntervalCollectionUpdate: ' + (collection.mtName && collection.mtName()) + ', ' + JSON.stringify(options));
         this.hot.render();
+    };
+
+
+    this.tableAfterRemoveRow = function(index, amount) {
+        var message = ['MtIntervalTable.tableAfterRemoveRow: index=', index, ', amount=', amount];
+        console.log(message.join(''));
+
+        Backbone.Mediator.publish('mt:intervalRowsDeleted', {
+            amount: amount,
+            index: index,
+            mtId: this.mtId,
+            source: 'table'
+        });
     };
 
 

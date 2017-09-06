@@ -32,10 +32,10 @@ var intervalTable = new MtIntervalTable();
 var paramTable = new MtParamTable();
 
 $(function () {
-    intervalTable.create(0, intervalCollection);
-    intervalCollection.makeDefault();
     paramTable.create(0, paramCollection);
     paramCollection.makeDefault();
+    intervalTable.create(0, intervalCollection);
+    // intervalCollection.makeDefault();
     intervalCollection.fetch();
     $('#mt-sync-info').text('Data loaded');
 });

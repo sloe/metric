@@ -16,7 +16,7 @@ var MtIntervalModel = Backbone.Model.extend({
             var newNumEvents = Math.round((attr.end_time - attr.start_time) * attr.rate / (60 * speedFactor));
             this.set({num_events: newNumEvents}, options);
         }
-        if (options.originator !== 'sync') {
+        if (options.originator !== 'sync' && (_.isUndefined(options.ongoing) || !options.ongoing)) {
             var row_index = this.collection.indexOf(this);
             if (!_.isUndefined(row_index)) {
                 this.save(null, {url: this.collection.url + '/' + row_index});
@@ -38,9 +38,12 @@ var MtIntervalCollection = Backbone.Collection.extend({
         this.mtId = options.mtId;
         this.mtParamProvider = options.mtParamProvider;
         this.on('all', this.onAll, this);
+        this.on('add', this.onAdd, this);
         this.on('change', this.onChange, this);
         this.on('sync', this.onSync, this);
-        Backbone.Mediator.subscribe('mt:controlChangedValue', this.onMtControlChangedValue, this);
+        Backbone.Mediator.subscribe('mt:controlChangedValue', this.onMtControlChangedValueOrFinish, this);
+        Backbone.Mediator.subscribe('mt:controlFinish', this.onMtControlChangedValueOrFinish, this);
+        Backbone.Mediator.subscribe('mt:intervalRowsDeleted', this.onMtIntervalRowsDeleted, this);
         Backbone.Mediator.subscribe('mt:paramCollectionValueChange', this.onMtParamCollectionValueChange, this);
     },
 
@@ -59,9 +62,9 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     saveAll: function() {
-        _.each(this.models, function(model, index) {
-            model.save({_index: index});
-        });
+        _.each(this.models, function(model, row_index) {
+            model.save(null, {url: this.url + '/' + row_index});
+        }, this);
     },
 
 
@@ -69,6 +72,15 @@ var MtIntervalCollection = Backbone.Collection.extend({
         var now = new Date();
         var message = ['MtIntervalCollection.onAll: ', now.getSeconds(), ':', now.getMilliseconds(), ' [' + event + '] ', JSON.stringify(model)].join('');
         console.log(message);
+    },
+
+
+    onAdd: function(model, collection, options) {
+        var message = ['MtIntervalCollection.onAdd ', JSON.stringify(model), JSON.stringify(collection), JSON.stringify(options)].join(', ');
+        console.log(message);
+
+        var row_index = collection.indexOf(model);
+        model.save(null, {url: this.url + '/' + row_index});
     },
 
 
@@ -100,15 +112,31 @@ var MtIntervalCollection = Backbone.Collection.extend({
     },
 
 
-    onMtControlChangedValue: function(event) {
-        console.log('MtIntervalCollection.onMtControlChangedValue: ' + JSON.stringify(event));
+    onMtControlChangedValueOrFinish: function(event) {
+        console.log('MtIntervalCollection.onMtControlChangedValueOrFinish: ' + JSON.stringify(event));
         if (event.options.mtId === this.mtId) {
             _.each(event.changes, function(change) {
                 var selectedModel = this.at(change.row);
                 var setParams = {};
                 setParams[change.property] = change.value;
                 selectedModel.set(setParams, event.options);
+                selectedModel.recalculate(event.options);
             }, this);
+        }
+    },
+
+
+    onMtIntervalRowsDeleted: function(event) {
+        console.log('MtIntervalCollection.onMtIntervalRowsDeleted: ' + JSON.stringify(event));
+        if (event.mtId === this.mtId) {
+            var remove_range = [];
+            for (var row_index = event.index; row_index < event.index + event.amount; row_index++) {
+                var model_to_destroy = this.at(row_index);
+                model_to_destroy.destroy({url: this.url + '/' + row_index});
+                remove_range.push(model_to_destroy);
+            }
+
+            this.remove(remove_range, {source: event.source});
         }
     },
 

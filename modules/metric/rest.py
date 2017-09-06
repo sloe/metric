@@ -45,7 +45,7 @@ def rest_handlers(name, table, field_name):
 
         row_id, array_index = metric.validator.row_id_array_index(args)
 
-        data_row = db(table.id == row_id).select(field_name).first()
+        data_row = db(table.id == row_id).select(field_name, for_update=True).first()
         if not data_row:
             raise HTTP(400, "%s row id %d not found" % (name, row_id))
 
@@ -60,11 +60,18 @@ def rest_handlers(name, table, field_name):
         if array_index is None:
             raise HTTP(400, "Array index must be specified")
 
-        if array_index >= len(data_array):
-            raise HTTP(400, "Data index %d out of range (<%d)" % (array_index, len(data_array)))
-
         post_data = json.loads(request_body)
-        data_array[array_index] = post_data
+
+        if array_index >= len(data_array):
+            # This is a new row
+            for i in range(1, array_index - len(data_array)):
+                # Pad the array if necessary, to reach the new index
+                data_array.append({})
+            data_array.append(post_data)
+        else:
+            # This updates a current row in the JSON array
+            data_array[array_index] = post_data
+
         new_data_json_str = json.dumps(data_json)
 
         result = db(table.id == row_id).validate_and_update(**{field_name: new_data_json_str})
@@ -72,10 +79,9 @@ def rest_handlers(name, table, field_name):
             raise HTTP(500, "Update failed: %s" % result.errors)
         db.commit()
 
-        response.view = 'returnsame.json'
+        response.view = 'generic.json'
 
-        # FIXME: Not yet sure what to return here
-        return dict(content="")
+        return dict(id=row_id)
 
 
     def __rest_put(*args, **vars):
@@ -87,6 +93,6 @@ def rest_handlers(name, table, field_name):
     return dict(
         GET=__rest_get,
         POST=__rest_post,
-        put=__rest_put,
-        delete=__rest_delete
+        PUT=__rest_put,
+        DELETE=__rest_delete
     )
