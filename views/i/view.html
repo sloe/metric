@@ -36,7 +36,7 @@ $(function () {
     paramCollection.makeDefault();
     intervalTable.create(0, intervalCollection);
     // intervalCollection.makeDefault();
-    intervalCollection.fetch();
+    intervalCollection.fetch({originator: 'fetch'});
     $('#mt-sync-info').text('Data loaded');
 });
 

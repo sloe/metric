@@ -16,10 +16,14 @@ var MtIntervalModel = Backbone.Model.extend({
             var newNumEvents = Math.round((attr.end_time - attr.start_time) * attr.rate / (60 * speedFactor));
             this.set({num_events: newNumEvents}, options);
         }
-        if (options.originator !== 'sync' && (_.isUndefined(options.ongoing) || !options.ongoing)) {
+        if (options.originator !== 'fetch' && options.originator !== 'sync' && (_.isUndefined(options.ongoing) || !options.ongoing)) {
             var row_index = this.collection.indexOf(this);
             if (!_.isUndefined(row_index)) {
-                this.save(null, {url: this.collection.url + '/' + row_index});
+                if (row_index < 0) {
+                    console.log('MtIntervalModel.recalculate: Bad row index ' + row_index);
+                } else {
+                    this.save(null, {url: this.collection.url + '/' + row_index});
+                }
             }
         }
     }
@@ -79,8 +83,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
         var message = ['MtIntervalCollection.onAdd ', JSON.stringify(model), JSON.stringify(collection), JSON.stringify(options)].join(', ');
         console.log(message);
 
-        var row_index = collection.indexOf(model);
-        model.save(null, {url: this.url + '/' + row_index});
+        model.recalculate(options);
     },
 
 
@@ -129,14 +132,11 @@ var MtIntervalCollection = Backbone.Collection.extend({
     onMtIntervalRowsDeleted: function(event) {
         console.log('MtIntervalCollection.onMtIntervalRowsDeleted: ' + JSON.stringify(event));
         if (event.mtId === this.mtId) {
-            var remove_range = [];
             for (var row_index = event.index; row_index < event.index + event.amount; row_index++) {
                 var model_to_destroy = this.at(row_index);
-                model_to_destroy.destroy({url: this.url + '/' + row_index});
-                remove_range.push(model_to_destroy);
-            }
 
-            this.remove(remove_range, {source: event.source});
+                model_to_destroy.destroy({source: event.source, url: this.url + '/' + row_index});
+            }
         }
     },
 

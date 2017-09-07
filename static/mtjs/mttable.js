@@ -61,7 +61,7 @@ function MtIntervalTable () {
         this.intervalCollection.on('sync', this.onIntervalCollectionSync, this);
         this.intervalCollection.on('update', this.onIntervalCollectionUpdate, this);
 
-        this.hot.addHook('afterRemoveRow', this.tableAfterRemoveRow.bind(this));
+        this.hot.addHook('beforeRemoveRow', this.tableBeforeRemoveRow.bind(this));
         this.hot.addHook('afterSelectionEnd', this.tableAfterSelectionEnd.bind(this));
 
         Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
@@ -103,8 +103,8 @@ function MtIntervalTable () {
     };
 
 
-    this.tableAfterRemoveRow = function(index, amount) {
-        var message = ['MtIntervalTable.tableAfterRemoveRow: index=', index, ', amount=', amount];
+    this.tableBeforeRemoveRow = function(index, amount) {
+        var message = ['MtIntervalTable.tableBeforeRemoveRow: index=', index, ', amount=', amount];
         console.log(message.join(''));
 
         Backbone.Mediator.publish('mt:intervalRowsDeleted', {
@@ -113,6 +113,9 @@ function MtIntervalTable () {
             mtId: this.mtId,
             source: 'table'
         });
+
+        // Return false to cancel further remove actions by the table
+        return false;
     };
 
 
