@@ -1,4 +1,6 @@
 
+"use strict";
+
 function MtUtil() {};
 
 MtUtil.emulateSplice = function(index, amount /* ... */ ) {

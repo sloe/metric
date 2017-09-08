@@ -66,7 +66,7 @@ function MtControlShuttle () {
                 }
             };
         } else {
-            console.log('Bad typeName ' + typeName);
+            mtlog.log('Bad typeName ' + typeName);
         }
 
 
@@ -171,7 +171,7 @@ function MtControlShuttle () {
             if (!_.isUndefined(event.values[this.propertyName])) {
                 this.setValue(event.values[this.propertyName]);
             }
-            console.log('MtControlShuttle.onSelectionChange: ' + JSON.stringify(event));
+            mtlog.log('MtControlShuttle.onSelectionChange: ' + JSON.stringify(event));
         }
     };
 

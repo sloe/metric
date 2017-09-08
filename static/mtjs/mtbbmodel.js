@@ -20,7 +20,7 @@ var MtIntervalModel = Backbone.Model.extend({
             var row_index = this.collection.indexOf(this);
             if (!_.isUndefined(row_index)) {
                 if (row_index < 0) {
-                    console.log('MtIntervalModel.recalculate: Bad row index ' + row_index);
+                    mtlog.log('MtIntervalModel.recalculate: Bad row index ' + row_index);
                 } else {
                     this.save(null, {url: this.collection.url + '/' + row_index});
                 }
@@ -36,27 +36,19 @@ var MtIntervalCollection = Backbone.Collection.extend({
         return response.interval;
     },
     splice: MtUtil.emulateSplice,
-    url: '/apiv1/interval/' + 7,
 
     initialize: function(models, options) {
+        this.datasetId = options.datasetId;
         this.mtId = options.mtId;
         this.mtParamProvider = options.mtParamProvider;
+        this.url = '/apiv1/interval/' + this.datasetId;
         this.on('all', this.onAll, this);
         this.on('add', this.onAdd, this);
         this.on('change', this.onChange, this);
-        this.on('sync', this.onSync, this);
         Backbone.Mediator.subscribe('mt:controlChangedValue', this.onMtControlChangedValueOrFinish, this);
         Backbone.Mediator.subscribe('mt:controlFinish', this.onMtControlChangedValueOrFinish, this);
         Backbone.Mediator.subscribe('mt:intervalRowsDeleted', this.onMtIntervalRowsDeleted, this);
         Backbone.Mediator.subscribe('mt:paramCollectionValueChange', this.onMtParamCollectionValueChange, this);
-    },
-
-
-    makeDefault: function() {
-        this.add([
-            {start_time: 1, end_time: 21, num_events: 10},
-            {start_time: 23, end_time: 43, num_events: 14}
-        ]);
     },
 
 
@@ -75,13 +67,13 @@ var MtIntervalCollection = Backbone.Collection.extend({
     onAll: function(event, model) {
         var now = new Date();
         var message = ['MtIntervalCollection.onAll: ', now.getSeconds(), ':', now.getMilliseconds(), ' [' + event + '] ', JSON.stringify(model)].join('');
-        console.log(message);
+        mtlog.log(message);
     },
 
 
     onAdd: function(model, collection, options) {
         var message = ['MtIntervalCollection.onAdd ', JSON.stringify(model), JSON.stringify(collection), JSON.stringify(options)].join(', ');
-        console.log(message);
+        mtlog.log(message);
 
         model.recalculate(options);
     },
@@ -89,7 +81,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
     onChange: function(model, options) {
         var message = ['MtIntervalCollection.onChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
-        console.log(message);
+        mtlog.log(message);
 
         if (!options.originator && model.changed) {
             options.originator = _.keys(model.changed)[0]
@@ -101,22 +93,8 @@ var MtIntervalCollection = Backbone.Collection.extend({
     },
 
 
-    onSync: function(collection_or_model, response, options) {
-        var message = ['MtIntervalCollection.onSync: ', JSON.stringify(collection_or_model), JSON.stringify(response), JSON.stringify(options)].join(', ');
-        console.log(message);
-
-        if (!options.originator) {
-            options.originator = 'sync'
-        }
-
-        _.each(this.models, function(model) {
-            model.recalculate(options);
-        });
-    },
-
-
     onMtControlChangedValueOrFinish: function(event) {
-        console.log('MtIntervalCollection.onMtControlChangedValueOrFinish: ' + JSON.stringify(event));
+        mtlog.log('MtIntervalCollection.onMtControlChangedValueOrFinish: ' + JSON.stringify(event));
         if (event.options.mtId === this.mtId) {
             _.each(event.changes, function(change) {
                 var selectedModel = this.at(change.row);
@@ -130,11 +108,10 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     onMtIntervalRowsDeleted: function(event) {
-        console.log('MtIntervalCollection.onMtIntervalRowsDeleted: ' + JSON.stringify(event));
+        mtlog.log('MtIntervalCollection.onMtIntervalRowsDeleted: ' + JSON.stringify(event));
         if (event.mtId === this.mtId) {
             for (var row_index = event.index; row_index < event.index + event.amount; row_index++) {
                 var model_to_destroy = this.at(row_index);
-
                 model_to_destroy.destroy({source: event.source, url: this.url + '/' + row_index});
             }
         }
@@ -142,7 +119,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     onMtParamCollectionValueChange: function(model, options) {
-        console.log('MtIntervalCollection.onMtParamCollectionValueChange: ' + JSON.stringify(event));
+        mtlog.log('MtIntervalCollection.onMtParamCollectionValueChange: ' + JSON.stringify(event));
 
         _.each(this.models, function(model) {
             model.recalculate(options);
@@ -162,6 +139,7 @@ var MtParamCollection = Backbone.Collection.extend({
 
 
     initialize: function(models, options) {
+        this.datasetId = options.datasetId;
         this.mtId = options.mtId;
         this.on('change', this.onChange, this);
     },
@@ -181,7 +159,7 @@ var MtParamCollection = Backbone.Collection.extend({
 
     onChange: function(model, options) {
         var message = ['MtParamCollection.onChange: ', JSON.stringify(model), ', ', JSON.stringify(options)].join('');
-        console.log(message);
+        mtlog.log(message);
 
         if (!options.originator) {
             options.originator = model.attributes.param;
@@ -194,7 +172,7 @@ var MtParamCollection = Backbone.Collection.extend({
 
 
     getParam: function(param, defaultValue) {
-        var paramModel = this.findWhere({param: 'speed_factor'});
+        var paramModel = this.findWhere({param: param});
         var retVal;
 
         if (_.isUndefined(paramModel)) {
@@ -204,21 +182,9 @@ var MtParamCollection = Backbone.Collection.extend({
             retVal = paramModel.attributes.value
             var message = ['MtParamCollection.getParam: ', param, ' returning ', retVal].join('');
         }
-        console.log(message);
+        mtlog.debug(message);
         return retVal;
     }
 });
 
-
-var ItemModel = Backbone.Model.extend({
-    parse: function(data) {
-        return data.item;
-    },
-    url: '/apiv1/item/1.json',
-    defaults: {
-        f_name: 'defaultname',
-        f_sourceid: 'defaultsourceid'
-    }
-
-});
 

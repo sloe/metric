@@ -6,6 +6,8 @@ cache/
 databases/
 errors/
 sessions/
+static/node_modules/
+static/yarn.lock
 uploads/
 
 # Byte-compiled / optimized / DLL files
