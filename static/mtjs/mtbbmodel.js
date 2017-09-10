@@ -16,6 +16,17 @@ var MtIntervalModel = Backbone.Model.extend({
             var newNumEvents = Math.round((attr.end_time - attr.start_time) * attr.rate / (60 * speedFactor));
             this.set({num_events: newNumEvents}, options);
         }
+
+
+        if (options.originator === 'fetch' || (options.originator !== 'interval' && _.isUndefined(this.changed.interval))) {
+            var newInterval = parseFloat(attr.end_time) - parseFloat(attr.start_time);
+            this.set({interval: newInterval}, options);
+        } else if (options.originator === 'interval' && _.isUndefined(this.changed.start_time) && _.isUndefined(this.changed.end_time)) {
+            var newEndTime = parseFloat(attr.start_time,) + parseFloat(attr.interval);
+            this.set({end_time: newEndTime}, options);
+        }
+
+
         if (options.originator !== 'fetch' && options.originator !== 'sync' && (_.isUndefined(options.ongoing) || !options.ongoing)) {
             var row_index = this.collection.indexOf(this);
             if (!_.isUndefined(row_index)) {
@@ -104,6 +115,35 @@ var MtIntervalCollection = Backbone.Collection.extend({
     onAdd: function(model, collection, options) {
         var message = ['MtIntervalCollection.onAdd ', JSON.stringify(model), JSON.stringify(collection), JSON.stringify(options)].join(', ');
         mtlog.log(message);
+
+        if (_.isEmpty(model.attributes)) {
+            // Create default values from neighbouring rows
+            var rowIndex = options.at;
+
+            if (rowIndex === 0) {
+                if (collection.length > 1) {
+                    var sourceModel = collection.at(1);
+                    var sourceAttr = sourceModel.attributes;
+
+                    model.set({
+                        start_time: parseFloat(sourceAttr.start_time) - parseFloat(sourceAttr.interval),
+                        end_time: sourceAttr.start_time,
+                        interval: sourceAttr.interval,
+                        num_events: sourceAttr.num_events
+                    }, {originator: 'add_row'});
+                }
+            } else {
+                var sourceModel = collection.at(rowIndex - 1);
+                var sourceAttr = sourceModel.attributes;
+
+                model.set({
+                    start_time: sourceAttr.end_time,
+                    end_time: parseFloat(sourceAttr.end_time) + parseFloat(sourceAttr.interval),
+                    interval: sourceAttr.interval,
+                    num_events: sourceAttr.num_events
+                }, {originator: 'add_row'});
+            }
+        }
 
         model.recalculate(options);
     },

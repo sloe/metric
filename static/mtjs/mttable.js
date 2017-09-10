@@ -13,6 +13,7 @@ function MtIntervalTable () {
         this.columnAttrs = [
             'start_time',
             'end_time',
+            'interval',
             'num_events',
             'rate',
             'notes'
@@ -21,6 +22,7 @@ function MtIntervalTable () {
         this.columnHeaders = [
             'Start',
             'End',
+            'Interval',
             'Number',
             'Rate',
             'Notes'
@@ -31,7 +33,7 @@ function MtIntervalTable () {
             return new MtIntervalModel();
         };
 
-        function columnFn(name) {
+        function columnFn(name, cellType, cellFormat) {
             return {
                 data: function (interval, value) {
                     if (_.isUndefined(interval)) {
@@ -42,17 +44,20 @@ function MtIntervalTable () {
                         interval.set(name, value, {source: 'table'});
                     }
                 },
+                format: cellFormat,
+                type: cellType
             };
         };
 
         this.hot = new Handsontable(this.containerElem, {
-            colHeaders: ['Start', 'End', 'Number', 'Rate', 'Notes'],
+            colHeaders: ['Start', 'End', 'Interval', 'Number', 'Rate', 'Notes'],
             columns: [
-                columnFn('start_time'),
-                columnFn('end_time'),
-                columnFn('num_events'),
-                columnFn('rate'),
-                columnFn('notes')
+                columnFn('start_time', 'numeric', '0,0.000'),
+                columnFn('end_time', 'numeric', '0,0.000'),
+                columnFn('interval', 'numeric', '0,0.000'),
+                columnFn('num_events', 'numeric', '0,0.0'),
+                columnFn('rate', 'numeric', '0,0.000'),
+                columnFn('notes', null, null)
             ],
             contextMenu: true,
             data: this.intervalCollection,
@@ -68,7 +73,7 @@ function MtIntervalTable () {
         // Handsontable will try to walk the datasource to derive the number of columns,
         // which doesn't work, so override it here
         this.hot.countSourceCols = function() {
-            return 5;
+            return 6;
         }
 
         this.intervalCollection.on('update', this.onIntervalCollectionUpdate, this);
