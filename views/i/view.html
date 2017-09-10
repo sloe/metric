@@ -6,20 +6,24 @@
 
 
 <script type="text/javascript"><!--
-player = new MtYouTubePlayer()
+player = new MtYouTubePlayer();
 function onYouTubeIframeAPIReady() {
-  // player.createPlayer('player', '{{=item_row.f_alien_key}}');
+    player.create(0, '{{=item_row.f_alien_key}}', true);
 }
 //->></script>
-<div id="player0"></div>
+
+<table>
+<tr><td><div id="player0_select_player">Loading...</div></td></tr>
+<tr><td><div id="player0_select_caption">Loading...</div></td></tr>
+</table>
 
 {{ write_mt_control_interval(0) }}
 
 <script>
-  interval = new MtControlInterval();
-  $(function () {
-    interval.create(0, 600);
-  });
+    interval = new MtControlInterval();
+    $(function () {
+        interval.create(0, 600);
+    });
 </script>
 
 <div id="intervaltable0"></div>
@@ -36,7 +40,7 @@ $(function () {
     paramTable.create(0, paramCollection);
     intervalTable.create(0, intervalCollection);
     paramCollection.makeDefault();
-    intervalCollection.fetch({originator: 'fetch'});
+    intervalCollection.loadInitial();
     $('#mt-sync-info').text('Data loaded');
 });
 

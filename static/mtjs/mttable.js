@@ -14,8 +14,18 @@ function MtIntervalTable () {
             'start_time',
             'end_time',
             'num_events',
-            'rate'
+            'rate',
+            'notes'
         ];
+
+        this.columnHeaders = [
+            'Start',
+            'End',
+            'Number',
+            'Rate',
+            'Notes'
+        ];
+
 
         function makeInterval() {
             return new MtIntervalModel();
@@ -36,12 +46,13 @@ function MtIntervalTable () {
         };
 
         this.hot = new Handsontable(this.containerElem, {
-            colHeaders: ['Start', 'End', 'Number', 'Rate'],
+            colHeaders: ['Start', 'End', 'Number', 'Rate', 'Notes'],
             columns: [
                 columnFn('start_time'),
                 columnFn('end_time'),
                 columnFn('num_events'),
-                columnFn('rate')
+                columnFn('rate'),
+                columnFn('notes')
             ],
             contextMenu: true,
             data: this.intervalCollection,
@@ -55,12 +66,11 @@ function MtIntervalTable () {
         });
 
         // Handsontable will try to walk the datasource to derive the number of columns,
-        // which doesn;t work, so override it here
+        // which doesn't work, so override it here
         this.hot.countSourceCols = function() {
-            return 4;
+            return 5;
         }
 
-        // this.intervalCollection.on('sync', this.onIntervalCollectionSync, this);
         this.intervalCollection.on('update', this.onIntervalCollectionUpdate, this);
 
         this.hot.addHook('beforeRemoveRow', this.tableBeforeRemoveRow.bind(this));
@@ -76,18 +86,21 @@ function MtIntervalTable () {
     };
 
 
-    this.onIntervalCollectionSync = function(collection_or_model, response, options) { // Not used
-        mtlog.log('MtIntervalTable.onIntervalCollectionSync: %s %s %s', (collection_or_model.mtName && collection_or_model.mtName()),
-            JSON.stringify(response), JSON.stringify(options));
-
+    this.onIntervalCollectionUpdate = function(collection, options) {
+        mtlog.log('MtIntervalTable.onIntervalCollectionUpdate: ' + (collection.mtName && collection.mtName()) + ', ' + JSON.stringify(options));
         var selection = this.hot.getSelected();
         if (_.isUndefined(selection)) {
             this.hot.selectCell(0, 0, 0, 0, false);
         } else {
-            var activeRow = selection[0]
+            var activeColumn = selection[1];
+            var activeColumnName = this.columnHeaders[activeColumn];
+            var activeRow = selection[0];
+
             var values = this.intervalCollection.at(activeRow).attributes;
 
             Backbone.Mediator.publish('mt:selectionChange', {
+                activeColumn: activeColumn,
+                activeColumnName: activeColumnName,
                 activeRow: activeRow,
                 mtId: this.mtId,
                 selection: selection,
@@ -95,41 +108,8 @@ function MtIntervalTable () {
                 values: values
             });
         }
+
         this.hot.render();
-    };
-
-
-    this.onIntervalCollectionUpdate = function(collection, options) {
-        mtlog.log('MtIntervalTable.onIntervalCollectionUpdate: ' + (collection.mtName && collection.mtName()) + ', ' + JSON.stringify(options));
-        var selection = this.hot.getSelected();
-        if (_.isUndefined(selection)) {
-            this.hot.selectCell(0, 0, 0, 0, false);
-        } else {
-            var activeRow = selection[0]
-            var values = this.intervalCollection.at(activeRow).attributes;
-
-            Backbone.Mediator.publish('mt:selectionChange', {
-                activeRow: activeRow,
-                mtId: this.mtId,
-                selection: selection,
-                source: 'table',
-                values: values
-            });
-        }        var selection = this.hot.getSelected();
-        if (_.isUndefined(selection)) {
-            this.hot.selectCell(0, 0, 0, 0, false);
-        } else {
-            var activeRow = selection[0]
-            var values = this.intervalCollection.at(activeRow).attributes;
-
-            Backbone.Mediator.publish('mt:selectionChange', {
-                activeRow: activeRow,
-                mtId: this.mtId,
-                selection: selection,
-                source: 'table',
-                values: values
-            });
-        }        this.hot.render();
     };
 
 
@@ -161,8 +141,15 @@ function MtIntervalTable () {
 
             var values = this.intervalCollection.at(r).attributes;
 
+            var activeColumn = c;
+            var activeColumnName = this.columnHeaders[activeColumn];
+            var activeProperty = this.columnAttrs[activeColumn];
+            var activeRow = r;
+
             Backbone.Mediator.publish('mt:selectionChange', {
-                activeRow: r,
+                activeColumn: activeColumn,
+                activeColumnName: activeColumnName,
+                activeRow: activeRow,
                 mtId: this.mtId,
                 selection: selection,
                 source: 'table',

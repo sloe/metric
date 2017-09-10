@@ -45,7 +45,7 @@ db.define_table(
 
 db.define_table(
     't_mtdataset',
-    Field('f_data', 'json', comment='Data in JSON format', default='{}', notnull=True, requires=IS_JSON()),
+    Field('f_data', 'json', comment='Data in JSON format', default={}, notnull=True, requires=IS_JSON()),
     Field('f_item', 'reference t_mtitem', comment='Item this dataset relates to', notnull=True, requires=IS_IN_DB(db, 't_mtitem.id', '%(f_name)s (%(id)d)', zero=None)),
-    Field('f_params', 'json', comment='Parameters in JSON format', default=None)
+    Field('f_params', 'json', comment='Parameters in JSON format', default={}, notnull=True, requires=IS_JSON())
 )

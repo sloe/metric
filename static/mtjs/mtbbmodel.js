@@ -57,6 +57,30 @@ var MtIntervalCollection = Backbone.Collection.extend({
     },
 
 
+    loadInitialErrorCallback: function(collection, response, options) {
+        mtlog.debug("MtIntervalCollection.loadInitialErrorCallback: collection=%s, response=%s, options=%s", collection, JSON.stringify(response), JSON.stringify(options));
+        collection.add([{notes: 'LOAD FAILED, please refresh'}]);
+    },
+
+
+    loadInitialSuccessCallback: function(collection, response, options) {
+        mtlog.debug("MtIntervalCollection.loadInitialSuccessCallback: collection=%s, response=%s, options=%s", collection, JSON.stringify(response), JSON.stringify(options));
+
+        if (collection.length == 0) {
+            collection.add([{}]);
+        }
+    },
+
+
+    loadInitial: function() {
+        intervalCollection.fetch({
+            error: this.loadInitialErrorCallback,
+            originator: 'fetch',
+            success: this.loadInitialSuccessCallback
+        });
+    },
+
+
     saveAll: function() {
         _.each(this.models, function(model, row_index) {
             model.save(null, {url: this.url + '/' + row_index});
@@ -98,8 +122,12 @@ var MtIntervalCollection = Backbone.Collection.extend({
         if (event.options.mtId === this.mtId) {
             _.each(event.changes, function(change) {
                 var selectedModel = this.at(change.row);
+                var setParamsSilent = {};
                 var setParams = {};
+                setParamsSilent[change.property] = change.value + 1;
                 setParams[change.property] = change.value;
+                // Make sure that change event is triggered if the value is unchanged
+                selectedModel.set(setParamsSilent, {silent: true});
                 selectedModel.set(setParams, event.options);
                 selectedModel.recalculate(event.options);
             }, this);

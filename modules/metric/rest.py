@@ -1,4 +1,5 @@
 
+import logging
 import json
 import types
 import uuid
@@ -6,28 +7,40 @@ import uuid
 from gluon import current
 from gluon.http import HTTP
 
+import metric.diag
 import metric.validator
 
+LOGGER = logging.getLogger('metric/rest')
+LOGGER.setLevel(logging.DEBUG)
 
 def rest_get_handler(name, table, field_name, *args, **vars):
+    errors = []
     db, response = current.db, current.response
 
     row_id, array_index = metric.validator.row_id_array_index(args)
 
     data_row = db(table.id == row_id).select(field_name).first()
     if not data_row:
-        raise HTTP(400, "%s row id %d not found" % (name, row_id))
+        http_400 = HTTP(400, "%s row id %d not found" % (name, row_id))
+        LOGGER.warn(metric.diag.exception_context(http_400))
+        raise http_400
 
     data_json = getattr(data_row, field_name)
+    if isinstance(data_json, types.StringTypes):
+        data_json = json.loads(data_json)
+
     data_array = data_json.get('d', None)
     if data_array is None:
-        raise HTTP(500, "Invalid database content")
+        LOGGER.warn("%s: %s", metric.diag.request_context(), 'Missing d element - creating')
+        data_array = []
 
     if array_index is None:
         response_data = data_array
     else:
         if array_index >= len(data_array):
-            raise HTTP(400, "Data index %d out of range (<%d)" % (array_index, len(data_array)))
+            http_400 = HTTP(400, "Data index %d out of range (<%d)" % (array_index, len(data_array)))
+            LOGGER.warn(metric.diag.exception_context(http_400))
+            raise http_400
 
         response_data = data_array[array_index]
 
@@ -55,12 +68,18 @@ def rest_post_put_handler(post_or_put, name, table, field_name, *args, **vars):
 
     data_array = data_json.get('d', None)
     if data_array is None:
-        raise HTTP(500, "Invalid database content")
+        LOGGER.warn("%s: %s", metric.diag.request_context(), 'Missing d element - creating')
+        data_array = []
+        data_json['d'] = data_array
 
     if array_index is None:
         raise HTTP(400, "Array index must be specified")
 
-    post_data = json.loads(request_body)
+    try:
+        post_data = json.loads(request_body)
+    except Exception, e:
+        LOGGER.warn("%s: %s", metric.diag.request_context(), e)
+        raise HTTP(400, "Invalid JSON")
 
     if array_index >= len(data_array):
         # This is a new row
@@ -77,7 +96,12 @@ def rest_post_put_handler(post_or_put, name, table, field_name, *args, **vars):
     result = db(table.id == row_id).validate_and_update(**{field_name: new_data_json_str})
     if result.errors:
         raise HTTP(500, "Update failed: %s" % result.errors)
-    db.commit()
+
+    try:
+        db.commit()
+    except Exception, e:
+        LOGGER.warn("%s: %s", metric.diag.request_context(), e)
+        raise HTTP(500, "Failed to save")
 
     response.view = 'generic.json'
 
@@ -119,7 +143,12 @@ def rest_delete_handler(name, table, field_name, *args, **vars):
     result = db(table.id == row_id).validate_and_update(**{field_name: new_data_json_str})
     if result.errors:
         raise HTTP(500, "Update failed: %s" % result.errors)
-    db.commit()
+
+    try:
+        db.commit()
+    except Exception, e:
+        LOGGER.warn("%s: %s", metric.diag.request_context(), e)
+        raise HTTP(500, "Failed to save")
 
     response.view = 'generic.json'
 
