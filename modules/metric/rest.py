@@ -31,7 +31,7 @@ def rest_get_handler(name, table, field_name, *args, **vars):
 
     data_array = data_json.get('d', None)
     if data_array is None:
-        LOGGER.warn("%s: %s", metric.diag.request_context(), 'Missing d element - creating')
+        LOGGER.warn("%s: %s", metric.diag.request_context(), 'Missing d element')
         data_array = []
 
     if array_index is None:

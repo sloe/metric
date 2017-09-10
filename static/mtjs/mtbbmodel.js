@@ -7,7 +7,7 @@ var MtIntervalModel = Backbone.Model.extend({
         var paramProvider = this.collection.mtParamProvider;
         var speedFactor = paramProvider.getParam('speed_factor');
 
-        if (options.originator === 'speed_factor' || options.originator === 'sync' || (options.originator !== 'rate' && _.isUndefined(this.changed.rate))) {
+        if (options.originator === 'speed_factor' || options.originator === 'fetch' || (options.originator !== 'rate' && _.isUndefined(this.changed.rate))) {
             // num_events or speed_factor was changed by the user so recaculate the rate based on it
             var newRate = (attr.num_events * speedFactor * 60) / (attr.end_time - attr.start_time);
             this.set({rate: newRate}, options);
@@ -58,8 +58,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     loadInitialErrorCallback: function(collection, response, options) {
-        mtlog.debug("MtIntervalCollection.loadInitialErrorCallback: collection=%s, response=%s, options=%s", collection, JSON.stringify(response), JSON.stringify(options));
-        collection.add([{notes: 'LOAD FAILED, please refresh'}]);
+        mtlog.warn("MtIntervalCollection.loadInitialErrorCallback: collection=%s, response=%s, options=%s", collection, JSON.stringify(response), JSON.stringify(options));
     },
 
 
@@ -73,10 +72,17 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     loadInitial: function() {
-        intervalCollection.fetch({
+        return this.fetch({
             error: this.loadInitialErrorCallback,
             originator: 'fetch',
             success: this.loadInitialSuccessCallback
+        });
+    },
+
+
+    recalculateAll: function(options) {
+        _.each(this.models, function(model) {
+            model.recalculate(options);
         });
     },
 
@@ -126,7 +132,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
                 var setParams = {};
                 setParamsSilent[change.property] = change.value + 1;
                 setParams[change.property] = change.value;
-                // Make sure that change event is triggered if the value is unchanged
+                // Make sure that change event is triggered if the value is unchanged (FIXME)
                 selectedModel.set(setParamsSilent, {silent: true});
                 selectedModel.set(setParams, event.options);
                 selectedModel.recalculate(event.options);
@@ -149,26 +155,40 @@ var MtIntervalCollection = Backbone.Collection.extend({
     onMtParamCollectionValueChange: function(model, options) {
         mtlog.log('MtIntervalCollection.onMtParamCollectionValueChange: ' + JSON.stringify(event));
 
-        _.each(this.models, function(model) {
-            model.recalculate(options);
-        });
+        this.recalculateAll(options);
     }
 });
 
 
 var MtParamModel = Backbone.Model.extend({
-    recalculate: function(options) {}
+    recalculate: function(options) {
+        if (options.originator !== 'fetch' && (_.isUndefined(options.ongoing) || !options.ongoing)) {
+            var row_index = this.collection.indexOf(this);
+            if (!_.isUndefined(row_index)) {
+                if (row_index < 0) {
+                    mtlog.log('MtIntervalModel.recalculate: Bad row index ' + row_index);
+                } else {
+                    this.save(null, {url: this.collection.url + '/' + row_index});
+                }
+            }
+        }
+    }
 });
 
 
 var MtParamCollection = Backbone.Collection.extend({
     model: MtParamModel,
+    parse: function(response) {
+        return response.param;
+    },
     splice: MtUtil.emulateSplice,
 
 
     initialize: function(models, options) {
         this.datasetId = options.datasetId;
         this.mtId = options.mtId;
+        this.url = '/apiv1/param/' + this.datasetId;
+
         this.on('change', this.onChange, this);
     },
 
@@ -182,6 +202,29 @@ var MtParamCollection = Backbone.Collection.extend({
 
     mtName: function() {
         return 'MtParamCollection' + this.mtId;
+    },
+
+
+    loadInitialErrorCallback: function(collection, response, options) {
+        mtlog.warn("MtParamCollection.loadInitialErrorCallback: collection=%s, response=%s, options=%s", collection, JSON.stringify(response), JSON.stringify(options));
+    },
+
+
+    loadInitialSuccessCallback: function(collection, response, options) {
+        mtlog.debug("MtParamCollection.loadInitialSuccessCallback: collection=%s, response=%s, options=%s", collection, JSON.stringify(response), JSON.stringify(options));
+
+        if (collection.length == 0) {
+            collection.makeDefault();
+        }
+    },
+
+
+    loadInitial: function() {
+        return this.fetch({
+            error: this.loadInitialErrorCallback,
+            originator: 'fetch',
+            success: this.loadInitialSuccessCallback
+        });
     },
 
 
@@ -205,7 +248,7 @@ var MtParamCollection = Backbone.Collection.extend({
 
         if (_.isUndefined(paramModel)) {
             retVal = defaultValue;
-            var message = ['MtParamCollection.getParam: Returning default value for ', param, ': ', retValue].join('');
+            var message = ['MtParamCollection.getParam: Returning default value for ', param, ': ', retVal].join('');
         } else {
             retVal = paramModel.attributes.value
             var message = ['MtParamCollection.getParam: ', param, ' returning ', retVal].join('');
@@ -214,5 +257,3 @@ var MtParamCollection = Backbone.Collection.extend({
         return retVal;
     }
 });
-
-

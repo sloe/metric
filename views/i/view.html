@@ -39,8 +39,12 @@ var paramTable = new MtParamTable();
 $(function () {
     paramTable.create(0, paramCollection);
     intervalTable.create(0, intervalCollection);
-    paramCollection.makeDefault();
-    intervalCollection.loadInitial();
+    var loadIntervalJob = intervalCollection.loadInitial();
+    var loadParamJob = paramCollection.loadInitial();
+    $.when(loadIntervalJob, loadParamJob).done(function () {
+        intervalCollection.recalculateAll({originator: 'fetch'});
+    });
+
     $('#mt-sync-info').text('Data loaded');
 });
 
