@@ -16,6 +16,7 @@ function MtIntervalTable () {
             'interval',
             'num_events',
             'rate',
+            'link_end_to_start',
             'notes'
         ];
 
@@ -25,6 +26,7 @@ function MtIntervalTable () {
             'Interval',
             'Number',
             'Rate',
+            'Link',
             'Notes'
         ];
 
@@ -50,13 +52,14 @@ function MtIntervalTable () {
         };
 
         this.hot = new Handsontable(this.containerElem, {
-            colHeaders: ['Start', 'End', 'Interval', 'Number', 'Rate', 'Notes'],
+            colHeaders: this.columnHeaders,
             columns: [
                 columnFn('start_time', 'numeric', '0,0.000'),
                 columnFn('end_time', 'numeric', '0,0.000'),
                 columnFn('interval', 'numeric', '0,0.000'),
                 columnFn('num_events', 'numeric', '0,0.0'),
                 columnFn('rate', 'numeric', '0,0.000'),
+                columnFn('link_end_to_start', 'checkbox', null),
                 columnFn('notes', null, null)
             ],
             contextMenu: true,
@@ -101,17 +104,19 @@ function MtIntervalTable () {
             var activeColumnName = this.columnHeaders[activeColumn];
             var activeRow = selection[0];
 
-            var values = this.intervalCollection.at(activeRow).attributes;
-
-            Backbone.Mediator.publish('mt:selectionChange', {
-                activeColumn: activeColumn,
-                activeColumnName: activeColumnName,
-                activeRow: activeRow,
-                mtId: this.mtId,
-                selection: selection,
-                source: 'table',
-                values: values
-            });
+            var activeModel = this.intervalCollection.at(activeRow);
+            if (!_.isUndefined(activeModel)) {
+                var values = activeModel.attributes;
+                Backbone.Mediator.publish('mt:selectionChange', {
+                    activeColumn: activeColumn,
+                    activeColumnName: activeColumnName,
+                    activeRow: activeRow,
+                    mtId: this.mtId,
+                    selection: selection,
+                    source: 'table',
+                    values: values
+                });
+            }
         }
 
         this.hot.render();

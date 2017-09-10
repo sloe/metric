@@ -26,14 +26,35 @@ var MtIntervalModel = Backbone.Model.extend({
             this.set({end_time: newEndTime}, options);
         }
 
+        if (attr.link_end_to_start !== true && attr.link_end_to_start !== false) {
+            attr.link_end_to_start = false;
+        }
 
-        if (options.originator !== 'fetch' && options.originator !== 'sync' && (_.isUndefined(options.ongoing) || !options.ongoing)) {
-            var row_index = this.collection.indexOf(this);
-            if (!_.isUndefined(row_index)) {
-                if (row_index < 0) {
-                    mtlog.log('MtIntervalModel.recalculate: Bad row index ' + row_index);
+        var rowIndex = this.collection.indexOf(this);
+
+        if (attr.link_end_to_start && rowIndex + 1 < this.collection.length &&
+            (options.originator === 'link_end_to_start' || !_.isUndefined(this.changed.end_time))) {
+            var nextModel = this.collection.at(rowIndex + 1);
+            var nextOptions = jQuery.extend({}, options);
+            nextOptions.row = rowIndex + 1;
+            nextModel.set({start_time: attr.end_time}, nextOptions);
+        }
+
+        if (!_.isUndefined(this.changed.start_time) && rowIndex > 0) {
+            var previousModel = this.collection.at(rowIndex - 1);
+            if (previousModel.attributes.link_end_to_start) {
+                var previousOptions = jQuery.extend({}, options);
+                previousOptions.row = rowIndex - 1;
+                previousModel.set({end_time: attr.start_time}, previousOptions);
+            }
+        }
+
+        if (options.originator !== 'fetch' && (_.isUndefined(options.ongoing) || !options.ongoing)) {
+            if (!_.isUndefined(rowIndex)) {
+                if (rowIndex < 0) {
+                    mtlog.log('MtIntervalModel.recalculate: Bad row index ' + rowIndex);
                 } else {
-                    this.save(null, {url: this.collection.url + '/' + row_index});
+                    this.save(null, {url: this.collection.url + '/' + rowIndex});
                 }
             }
         }
@@ -129,10 +150,11 @@ var MtIntervalCollection = Backbone.Collection.extend({
                         start_time: parseFloat(sourceAttr.start_time) - parseFloat(sourceAttr.interval),
                         end_time: sourceAttr.start_time,
                         interval: sourceAttr.interval,
-                        num_events: sourceAttr.num_events
+                        num_events: sourceAttr.num_events,
+                        link_end_to_start: sourceAttr.link_end_to_start
                     }, {originator: 'add_row'});
                 }
-            } else {
+            } else if (!_.isUndefined(rowIndex)) {
                 var sourceModel = collection.at(rowIndex - 1);
                 var sourceAttr = sourceModel.attributes;
 
@@ -140,7 +162,8 @@ var MtIntervalCollection = Backbone.Collection.extend({
                     start_time: sourceAttr.end_time,
                     end_time: parseFloat(sourceAttr.end_time) + parseFloat(sourceAttr.interval),
                     interval: sourceAttr.interval,
-                    num_events: sourceAttr.num_events
+                    num_events: sourceAttr.num_events,
+                    link_end_to_start: sourceAttr.link_end_to_start
                 }, {originator: 'add_row'});
             }
         }

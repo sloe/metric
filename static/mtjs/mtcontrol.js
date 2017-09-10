@@ -147,7 +147,8 @@ function MtControlShuttle () {
 
 
     this.onMtCollectionValueChange = function(model, options) {
-        if (model.collection.mtId === this.mtId && model.changed) {
+        if (model.collection.mtId === this.mtId && model.changed &&
+            (_.isUndefined(options.row) || options.row === this.activeRow)) {
             _.each(model.changed, function(value, property) {
                 if (property === this.propertyName) {
                     this.valueElem.text(value);
