@@ -86,7 +86,42 @@ MtYouTubePlayer.prototype.updateCaption = function() {
 };
 
 
+MtYouTubePlayer.prototype._paramChangeEventData = function(params, options) {
+    return {
+        changes: params,
+        options: _.extend({
+            mtId: this.mtId,
+            originator: 'video_load',
+            source: this.sourceName
+        }, options)
+    };
+}
+
+
+MtYouTubePlayer.prototype.publishParamChange = function(params, options) {
+    var eventId = 'mt:paramChangedValue';
+    Backbone.Mediator.publish(eventId, this._paramChangeEventData(params, options));
+};
+
+
+MtYouTubePlayer.prototype.readMetadataFromPlayer = function(event) {
+    var videoDuration = this.player.getDuration();
+
+    var params = [{
+        property: 'video_duration',
+        value: videoDuration
+    }];
+
+    var options = {};
+
+    this.publishParamChange(params, options);
+};
+
+
 MtYouTubePlayer.prototype.onPlayerReady = function(event) {
+    if (this.isMaster) {
+        this.readMetadataFromPlayer();
+    }
     event.target.playVideo();
 };
 

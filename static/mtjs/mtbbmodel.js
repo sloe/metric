@@ -253,12 +253,15 @@ var MtParamCollection = Backbone.Collection.extend({
         this.url = '/apiv1/param/' + this.datasetId;
 
         this.on('change', this.onChange, this);
+
+        Backbone.Mediator.subscribe('mt:paramChangedValue', this.onMtParamChangedValue, this);
     },
 
 
     makeDefault: function() {
         this.add([
-            {param: 'speed_factor', displayName: 'Speed factor', value: 1.0}
+            {param: 'speed_factor', displayName: 'Speed factor', value: 1.0},
+            {param: 'video_duration', displayName: 'Video duration', value: null}
         ]);
     },
 
@@ -302,6 +305,22 @@ var MtParamCollection = Backbone.Collection.extend({
         model.recalculate(options);
 
         Backbone.Mediator.publish('mt:paramCollectionValueChange', model, options);
+    },
+
+
+    onMtParamChangedValue: function(event) {
+        mtlog.log('MtParamCollection.onMtParamChangedValue: %s', JSON.stringify(event));
+
+        if (event.options.mtId === this.mtId) {
+            _.each(event.changes, function(change) {
+                var paramModel = this.findWhere({param: change.property});
+                if (_.isUndefined(paramModel)) {
+                    mtlog.warn("No model for parameter '%s'", change.property);
+                } else {
+                    paramModel.set({value: change.value}, event.options);
+                }
+            }, this);
+        }
     },
 
 
