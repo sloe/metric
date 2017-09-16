@@ -1,0 +1,18 @@
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+PIDFile=/run/gunicorn/pid
+User=mtgunic
+Group=mtgunic
+RuntimeDirectory=gunicornruntime
+WorkingDirectory=@WEB2PY_DIR@
+ExecStart=@PIPENV_BIN@/gunicorn --pid /run/gunicorn/pid --bind unix:/run/gunicorn/socket wsgihandler:application
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
