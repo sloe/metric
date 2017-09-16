@@ -93,5 +93,22 @@ sed -e "s%@PIPENV_BIN@%$PIPENV_BIN%g" -e "s%@WEB2PY_DIR@%$WEB2PY_DIR%g" private/
 \cp -f private/systemd_system_gunicorn.socket /etc/systemd/system/gunicorn.socket
 \cp -f private/tmpfiles_d_gunicorn.conf /etc/tmpfiles.d/gunicorn.conf
 
+NGINX_SSL_DIR=/etc/nginx/ssl
+
+\cp -f private/etc_nginx_conf_d_web2py.conf /etc/nginx/conf.d/web2py.conf
+
+if [ ! -d $NGINX_SSL_DIR ] ; then
+  mkdir -p $NGINX_SSL_DIR
+  cd $NGINX_SSL_DIR
+
+  openssl genrsa 1024 > web2py.key && chmod 400 web2py.key
+  openssl req -new -x509 -nodes -sha1 -days 1780 -key web2py.key > web2py.crt
+  openssl x509 -noout -fingerprint -text < web2py.crt > web2py.info
+fi
+
 systemctl enable gunicorn.socket
 systemctl start gunicorn.socket
+
+systemctl enable gunicorn.service
+systemctl reload gunicorn.service
+
