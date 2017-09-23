@@ -10,6 +10,8 @@ APPBRANCH=metric
 WEB2PY_DIR=$ROOT/web2py
 APP_PARENT_DIR=$WEB2PY_DIR/applications
 APP_DIR=$APP_PARENT_DIR/$APPNAME
+APPCONFIG_LEAFNAME=appconfig.ini
+APPCONFIG_DEST=$APP_DIR/private/$APPCONFIG_LEAFNAME
 GUNICORN_RUN_DIR=/run/gunicorn
 
 yum install -y git
@@ -29,7 +31,7 @@ git reset --hard
 git checkout $WEB2PY_BRANCH
 git pull --ff-only origin $WEB2PY_BRANCH
 git submodule update --init --recursive
-git clean -dfx
+git clean -df
 
 \cp -f handlers/wsgihandler.py .
 
@@ -45,7 +47,7 @@ cd $APP_DIR
 git reset --hard
 git checkout $APPBRANCH
 git pull --ff-only origin $APPBRANCH
-git clean -dfx
+git clean -df
 
 id -g mtgunic &>/dev/null || groupadd --gid=2000 mtgunic
 id -u mtgunic &>/dev/null || useradd --create-home --gid=2000 --shell=/bin/false --uid=2000 mtgunic
@@ -96,6 +98,10 @@ sed -e "s%@PIPENV_BIN@%$PIPENV_BIN%g" -e "s%@WEB2PY_DIR@%$WEB2PY_DIR%g" private/
 NGINX_SSL_DIR=/etc/nginx/ssl
 
 \cp -f private/etc_nginx_conf_d_web2py.conf /etc/nginx/conf.d/web2py.conf
+
+if [ ! -f $APPCONFIG_DEST ] ; then
+  \cp -f ~/$APPCONFIG_LEAFNAME $APPCONFIG_DEST
+fi
 
 if [ ! -d $NGINX_SSL_DIR ] ; then
   mkdir -p $NGINX_SSL_DIR
