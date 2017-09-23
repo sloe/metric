@@ -52,7 +52,7 @@ function MtControlShuttle () {
                     return num.toFixed(3);
                 }
             };
-        } else if (typeName === 'ratepermin') {
+        } else if (typeName === 'rate_per_min') {
             this.coarseStep = 0.1;
             this.fineRange = 1.0;
             coarsePrettify = function(num) {
@@ -132,28 +132,37 @@ function MtControlShuttle () {
 
         Backbone.Mediator.subscribe('mt:selectionChange', this.onSelectionChange, this);
         Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
+        Backbone.Mediator.subscribe('mt:paramCollectionValueBroadcast', this.onMtParamCollectionValueBroadcast, this);
 
         return this;
     };
 
 
     this.setValue = function(value) {
-        var coarseValue = Math.floor(value / this.coarseStep) * this.coarseStep;
-        var fineValue = value - coarseValue;
-        this.coarseSlider.update({from: coarseValue});
-        this.fineSlider.update({from: fineValue});
-        this.valueElem.text(value);
+        if (_.isFinite(value)) {
+            var coarseValue = Math.floor(value / this.coarseStep) * this.coarseStep;
+            var fineValue = value - coarseValue;
+            this.coarseSlider.update({from: coarseValue});
+            this.fineSlider.update({from: fineValue});
+
+            if (this.valueElem) {
+                this.valueElem.text(value);
+            }
+        }
     };
 
 
     this.onMtCollectionValueChange = function(model, options) {
         if (model.collection.mtId === this.mtId && model.changed &&
             (_.isUndefined(options.row) || options.row === this.activeRow)) {
-            _.each(model.changed, function(value, property) {
-                if (property === this.propertyName) {
-                    this.valueElem.text(value);
-                }
-            }, this);
+
+            if (this.valueElem) {
+                _.each(model.changed, function(value, property) {
+                    if (property === this.propertyName) {
+                        this.valueElem.text(value);
+                    }
+                }, this);
+            }
 
             if (options.source !== this.sourceName) { // Don't respond to our own events
                 _.each(model.changed, function(value, property) {
@@ -174,6 +183,22 @@ function MtControlShuttle () {
             }
             mtlog.log('MtControlShuttle.onSelectionChange: ' + JSON.stringify(event));
         }
+    };
+
+
+    this.onMtParamCollectionValueBroadcast = function(models, options) {
+        mtlog.log('MtControlShuttle.onMtParamCollectionValueBroadcast: ' + JSON.stringify(models) + ', ' + JSON.stringify(options));
+        _.each(models, function(model, options) {
+            if (model.attributes.param === 'speed_factor' && this.typeName == 'duration') {
+                this.fineSlider.update({min: -Math.min(model.attributes.value), max: Math.ceil(model.attributes.value)});
+            } else if (model.attributes.param === 'video_duration' && this.typeName == 'duration') {
+                this.coarseSlider.update({max: Math.ceil(model.attributes.value)});
+            } else if (model.attributes.param === 'min_rate_per_min' && this.typeName == 'rate_per_min') {
+                this.coarseSlider.update({min: Math.floor(model.attributes.value)});
+            } else if (model.attributes.param === 'max_rate_per_min' && this.typeName == 'rate_per_min') {
+                this.coarseSlider.update({max: Math.ceil(model.attributes.value)});
+            }
+        }, this);
     };
 
 
@@ -214,8 +239,8 @@ function MtControlInterval () {
         this.shuttles = {
             start_time: new MtControlShuttle().create(mtId, 'start_time', 'duration', 0, durationSecs),
             end_time: new MtControlShuttle().create(mtId, 'end_time', 'duration', 0, durationSecs),
-            num_events:  new MtControlShuttle().create(mtId, 'num_events', 'count', 0, 200),
-            rate:  new MtControlShuttle().create(mtId, 'rate', 'ratepermin', 10, 60)
+            num_events:  new MtControlShuttle().create(mtId, 'num_events', 'count', 1, 200),
+            rate:  new MtControlShuttle().create(mtId, 'rate', 'rate_per_min', 10, 60)
         };
     };
 };

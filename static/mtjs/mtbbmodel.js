@@ -253,6 +253,7 @@ var MtParamCollection = Backbone.Collection.extend({
         this.url = '/apiv1/param/' + this.datasetId;
 
         this.on('change', this.onChange, this);
+        this.on('update', this.onUpdate, this);
 
         Backbone.Mediator.subscribe('mt:paramChangedValue', this.onMtParamChangedValue, this);
     },
@@ -261,7 +262,9 @@ var MtParamCollection = Backbone.Collection.extend({
     makeDefault: function() {
         this.add([
             {param: 'speed_factor', displayName: 'Speed factor', value: 1.0},
-            {param: 'video_duration', displayName: 'Video duration', value: null}
+            {param: 'video_duration', displayName: 'Video duration', value: null},
+            {param: 'min_rate_per_min', displayName: 'Minimum rate supported', value: 10.0},
+            {param: 'max_rate_per_min', displayName: 'Maximum rate supported', value: 60.0}
         ]);
     },
 
@@ -304,7 +307,23 @@ var MtParamCollection = Backbone.Collection.extend({
 
         model.recalculate(options);
 
-        Backbone.Mediator.publish('mt:paramCollectionValueChange', model, options);
+        Backbone.Mediator.publish('mt:paramCollectionValueBroadcast', [model], options);
+    },
+
+
+    onUpdate: function(collection, options) {
+        var message = ['MtParamCollection.onChange: ', JSON.stringify(collection), ', ', JSON.stringify(options)].join('');
+        mtlog.log(message);
+
+        if (!options.originator) {
+            options.originator = 'update';
+        }
+
+        _.each(collection.models, function(model) {
+            model.recalculate(options);
+        });
+
+        Backbone.Mediator.publish('mt:paramCollectionValueBroadcast', collection.models, options);
     },
 
 

@@ -260,9 +260,14 @@ function MtParamTable () {
             outsideClickDeselects : true
         });
 
+        // Handsontable will try to walk the datasource to derive the number of columns,
+        // which doesn't work, so override it here
+        this.hot.countSourceCols = function() {
+            return 2;
+        }
 
         this.paramCollection.on('update', this.onParamCollectionUpdate, this);
-        Backbone.Mediator.subscribe('mt:paramCollectionValueChange', this.onMtParamCollectionValueChange, this);
+        Backbone.Mediator.subscribe('mt:paramCollectionValueBroadcast', this.onMtParamCollectionValueBroadcast, this);
     };
 
 
@@ -272,8 +277,9 @@ function MtParamTable () {
     };
 
 
-    this.onMtCollectionValueChange = function(model, options) {
-        mtlog.log('MtParamTable.onMtParamCollectionValueChange: ' + JSON.stringify(model) + ', ' + JSON.stringify(options));
+    this.onMtParamCollectionValueBroadcast = function(models, options) {
+        mtlog.log('MtParamTable.onMtParamCollectionValueBroadcast: ' + JSON.stringify(models) + ', ' + JSON.stringify(options));
         this.hot.render();
     };
+
 };

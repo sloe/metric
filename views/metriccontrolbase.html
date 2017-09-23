@@ -9,15 +9,16 @@
 
 {{
 def write_mt_control_interval(id):
+    style = "width:640px;"
     response.write(TABLE(
-        TR(TD(INPUT(_id='slider%d_start_time_coarse' % id, _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='slider%d_start_time_value' % id)),
-        TR(TD(INPUT(_id='slider%d_start_time_fine' % id, _type='text', _value="Loading..."), _style="width:400px;")),
-        TR(TD(INPUT(_id='slider%d_end_time_coarse' % id, _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='slider%d_end_time_value' % id)),
-        TR(TD(INPUT(_id='slider%d_end_time_fine' % id, _type='text', _value="Loading..."), _style="width:400px;")),
-        TR(TD(INPUT(_id='slider%d_num_events_coarse' % id, _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='slider%d_num_events_value' % id)),
-        TR(TD(INPUT(_id='slider%d_num_events_fine' % id, _type='text', _value="Loading..."), _style="width:400px;")),
-        TR(TD(INPUT(_id='slider%d_rate_coarse' % id, _type='text', _value="Loading..."), _style="width:400px;"), TD(SPAN("Loading..."), _id='slider%d_rate_value' % id)),
-        TR(TD(INPUT(_id='slider%d_rate_fine' % id, _type='text', _value="Loading..."), _style="width:400px;"))
+        TR(TD(INPUT(_id='slider%d_start_time_coarse' % id, _type='text', _value="Loading..."), _style=style)), # TD(SPAN("Loading..."), _id='slider%d_start_time_value' % id)
+        TR(TD(INPUT(_id='slider%d_start_time_fine' % id, _type='text', _value="Loading..."), _style=style)),
+        TR(TD(INPUT(_id='slider%d_end_time_coarse' % id, _type='text', _value="Loading..."), _style=style)),
+        TR(TD(INPUT(_id='slider%d_end_time_fine' % id, _type='text', _value="Loading..."), _style=style)),
+        TR(TD(INPUT(_id='slider%d_num_events_coarse' % id, _type='text', _value="Loading..."), _style=style)),
+        TR(TD(INPUT(_id='slider%d_num_events_fine' % id, _type='text', _value="Loading..."), _style=style)),
+        TR(TD(INPUT(_id='slider%d_rate_coarse' % id, _type='text', _value="Loading..."), _style=style)),
+        TR(TD(INPUT(_id='slider%d_rate_fine' % id, _type='text', _value="Loading..."), _style=style))
     ))
     pass
 }}
