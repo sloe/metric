@@ -1,6 +1,9 @@
 # Wing IDE additions
 *.wpu
 
+# metric exclusions
+private/appconfig.ini
+
 # web2py exclusions
 cache/
 databases/
