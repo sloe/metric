@@ -110,6 +110,14 @@ auth.settings.registration_requires_verification = False
 auth.settings.registration_requires_approval = False
 auth.settings.reset_password_requires_verification = True
 
+from gluon.contrib.login_methods.rpx_account import RPXAccount
+auth.settings.actions_disabled=['register','change_password','request_reset_password']
+auth.settings.login_form = RPXAccount(request,
+    api_key=myconf.get('janrain.apikey'),
+    domain='oarstack-metrics',
+    url = "https://metric.oarstack.com/%s/default/user/login" % request.application)
+
+
 # -------------------------------------------------------------------------
 # Define your tables below (or better in another model file) for example
 #
