@@ -85,6 +85,8 @@ PIPENV_BIN=`pipenv --venv`/bin
 
 echo Pipenv path to venv is $PIPENV_BIN
 
+\rm -rf $APP_DIR/compiled/*
+
 cd $WEB2PY_DIR
 
 $PIPENV_BIN/python web2py.py -S $APPNAME -R applications/$APPNAME/private/compile.py
