@@ -49,3 +49,10 @@ db.define_table(
     Field('f_item', 'reference t_mtitem', comment='Item this dataset relates to', notnull=True, requires=IS_IN_DB(db, 't_mtitem.id', '%(f_name)s (%(id)d)', zero=None)),
     Field('f_param', 'json', comment='Parameters in JSON format', default={}, notnull=True, requires=IS_JSON())
 )
+
+
+db.define_table(
+    't_mtsearch',
+    Field('f_query', comment='Query', label='YouTube URL'),
+    Field('f_user', 'reference t_mtuser', comment='Owning user', requires=IS_IN_DB(db, 't_mtuser.id', '%(f_username)s', zero=None), writable=False)
+)

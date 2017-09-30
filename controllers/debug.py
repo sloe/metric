@@ -20,6 +20,11 @@ def itemtype():
     return dict(grid=grid)
 
 
+def search():
+    grid = SQLFORM.grid(db.t_mtsearch)
+    return dict(grid=grid)
+
+
 def user():
     grid = SQLFORM.grid(db.t_mtuser)
     return dict(grid=grid)

@@ -22,6 +22,3 @@ def yt():
         item_row=item_row,
         dataset_id=dataset_id
     )
-
-
-

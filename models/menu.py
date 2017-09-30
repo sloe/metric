@@ -16,6 +16,7 @@ response.menu = [
         (T("Datasets"), False, URL("debug", "dataset"), []),
         (T("Items"), False, URL("debug", "item"), []),
         (T("Item types"), False, URL("debug", "itemtype"), []),
+        (T("Searches"), False, URL("debug", "search"), []),
         (T("Users"), False, URL("debug", "user"), [])
     ])
 ]
