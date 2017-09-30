@@ -9,8 +9,17 @@ MtYouTubePlayer.prototype.create = function(mtId, alienKey, isMaster) {
     this.alienKey = alienKey;
     this.isMaster = isMaster;
 
+    this.activeRow = null;
+    this.coldTickDelay = 1000;
+    this.currentTime = 0;
     this.currentProperty = 'start_time';
     this.currentPropertyName = 'Start';
+    this.hotTickDelay = 100;
+    this.inhibitNextChangeEvent = false;
+    this.initState = 0;
+    this.isReady = false;
+    this.lastSeek = null;
+    this.loadedFraction = 0;
     this.propertyType = 'select';
     this.sourceName = 'player';
 
@@ -36,12 +45,69 @@ MtYouTubePlayer.prototype.create = function(mtId, alienKey, isMaster) {
 };
 
 
+MtYouTubePlayer.prototype.timerTick = function() {
+    if (this.initState == 0) {
+        return false;
+    }
+    var newCurrentTime, newLoadedFraction;
+    var currentTimeHasChanged = false;
+    var hasChanged = false;
+    var loadedFractionHasChanged = false;
+
+    newCurrentTime = this.player.getCurrentTime();
+    newLoadedFraction = this.player.getVideoLoadedFraction();
+    currentTimeHasChanged = (this.currentTime !== newCurrentTime);
+    loadedFractionHasChanged = (this.loadedFraction !== newLoadedFraction);
+    hasChanged = (currentTimeHasChanged || loadedFractionHasChanged);
+
+    var oldCurrentTime = this.currentTime;
+    this.currentTime = newCurrentTime;
+    this.loadedFraction = newLoadedFraction;
+
+    if (hasChanged) {
+        this.updateCaption();
+    }
+    if (currentTimeHasChanged) {
+        if (this.inhibitNextChangeEvent) {
+            mtlog.log('Inhibiting change from ' + oldCurrentTime + ' to ' + newCurrentTime);
+            this.inhibitNextChangeEvent = false;
+        } else {
+            mtlog.log('Sending change from ' + oldCurrentTime + ' to ' + newCurrentTime);
+            if (this.playerState == YT.PlayerState.PLAYING) {
+                this.publishControlChangedValue();
+            } else {
+                this.publishControlFinish();
+            }
+        }
+    }
+    mtlog.log('Tick, hasChanged=' + hasChanged);
+    return hasChanged;
+};
+
+
+MtYouTubePlayer.prototype.timerTickWrapper = function() {
+    var hasChanged;
+    var tickDelay = 2000; // Use if there's an exception
+    try {
+        hasChanged = this.timerTick();
+        if (hasChanged) {
+            tickDelay = this.hotTickDelay;
+        } else {
+            tickDelay = this.coldTickDelay;
+        }
+    }
+    finally {
+        setTimeout(this.timerTickWrapper.bind(this), tickDelay);
+    }
+};
+
+
 MtYouTubePlayer.prototype.onMtCollectionValueChange = function(model, options) {
-    if (model.collection.mtId === this.mtId && model.changed) {
+    if (model.collection.mtId === this.mtId && options.row === this.activeRow && model.changed) {
         if (options.source !== this.sourceName) { // Don't respond to our own events
             _.each(model.changed, function(value, property) {
-                if (property === 'start_time' || property === 'end_time') {
-                    this.doSeek(value);
+                if (property === this.currentProperty) {
+                    this.doSilentSeek(value);
                 }
             }, this);
         }
@@ -50,7 +116,9 @@ MtYouTubePlayer.prototype.onMtCollectionValueChange = function(model, options) {
 
 
 MtYouTubePlayer.prototype.onSelectionChange = function(event) {
+    var newValue;
     if (event.mtId === this.mtId) {
+        this.activeRow = event.activeRow;
         if (event.activeProperty === 'end_time') {
             this.currentProperty = 'end_time';
             this.currentPropertyName = 'End frame';
@@ -59,6 +127,8 @@ MtYouTubePlayer.prototype.onSelectionChange = function(event) {
             this.currentPropertyName = 'Start frame';
         }
         this.updateCaption();
+        newValue = event.values[this.currentProperty];
+        this.doSilentSeek(newValue);
     }
 };
 
@@ -81,7 +151,12 @@ MtYouTubePlayer.prototype.updateCaption = function() {
          playerStateStr = 'CUED';
     }
 
-    var caption = this.currentPropertyName + ' (' + playerStateStr + ')';
+    var caption = this.currentPropertyName + ' (' + playerStateStr + ') ' + this.currentTime.toFixed(3) + 's';
+    if (this.loadedFraction < 1.0) {
+        caption += ' (loaded ' + (this.loadedFraction * 100).toFixed(0) + '%)';
+    } else {
+        caption += ' (loaded)';
+    }
     this.captionElem.text(caption);
 };
 
@@ -119,16 +194,26 @@ MtYouTubePlayer.prototype.readMetadataFromPlayer = function(event) {
 
 
 MtYouTubePlayer.prototype.onPlayerReady = function(event) {
+    this.isReady = true;
     if (this.isMaster) {
         this.readMetadataFromPlayer();
     }
-    event.target.playVideo();
+    this.player.pauseVideo();
+    this.player.seekTo(0);
+    setTimeout(this.timerTickWrapper.bind(this), this.hotTickDelay);
 };
 
 
 MtYouTubePlayer.prototype.onPlayerStateChange = function(event) {
     this.playerState = event.data;
     this.updateCaption();
+    if (this.initState === 0 && event.data === YT.PlayerState.PLAYING) {
+        this.initState = 1;
+        this.doPause();
+        if (!_.isNull(this.lastSeek)) {
+            this.doSilentSeek(this.lastSeek);
+        }
+    }
 };
 
 
@@ -143,9 +228,23 @@ MtYouTubePlayer.prototype.doPause = function() {
 
 
 MtYouTubePlayer.prototype.doSeek = function(seconds) {
-    this.player.pauseVideo();
-    this.player.seekTo(seconds);
+    this.lastSeek = seconds;
+    if (this.isReady) {
+        this.player.pauseVideo();
+        this.player.seekTo(seconds);
+    }
 };
+
+
+MtYouTubePlayer.prototype.doSilentSeek = function(seconds) {
+    this.lastSeek = seconds;
+    if (this.isReady) {
+        this.player.pauseVideo();
+        this.inhibitNextChangeEvent = true;
+        this.player.seekTo(seconds);
+    }
+};
+
 
 MtYouTubePlayer.prototype.setSize = function(width, height) {
     this.player.setSize(width, height);
@@ -156,3 +255,37 @@ MtYouTubePlayer.prototype.doNudge = function(offset) {
     this.player.seekTo(timeNow + offset, true);
 };
 
+
+MtYouTubePlayer.prototype._changeEventData = function(ongoing) {
+    var value = this.currentTime;
+    return {
+        changes: [{
+            property: this.currentProperty,
+            row: this.activeRow,
+            value: value
+        }],
+        options: {
+            mtId: this.mtId,
+            ongoing: ongoing,
+            originator: this.currentProperty,
+            row: this.activeRow,
+            source: this.sourceName
+        }
+    };
+}
+
+
+MtYouTubePlayer.prototype.publishControlChangedValue = function() {
+    if (!_.isNull(this.activeRow)) {
+        var eventId = 'mt:controlChangedValue';
+        Backbone.Mediator.publish(eventId, this._changeEventData(true));
+    }
+};
+
+
+MtYouTubePlayer.prototype.publishControlFinish = function() {
+    if (!_.isNull(this.activeRow)) {
+        var eventId = 'mt:controlFinish';
+        Backbone.Mediator.publish(eventId, this._changeEventData(false));
+    }
+};

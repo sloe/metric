@@ -102,6 +102,7 @@ function MtIntervalTable () {
         } else {
             var activeColumn = selection[1];
             var activeColumnName = this.columnHeaders[activeColumn];
+            var activeProperty = this.columnAttrs[activeColumn];
             var activeRow = selection[0];
 
             var activeModel = this.intervalCollection.at(activeRow);
@@ -110,6 +111,7 @@ function MtIntervalTable () {
                 Backbone.Mediator.publish('mt:selectionChange', {
                     activeColumn: activeColumn,
                     activeColumnName: activeColumnName,
+                    activeProperty: activeProperty,
                     activeRow: activeRow,
                     mtId: this.mtId,
                     selection: selection,
@@ -159,6 +161,7 @@ function MtIntervalTable () {
             Backbone.Mediator.publish('mt:selectionChange', {
                 activeColumn: activeColumn,
                 activeColumnName: activeColumnName,
+                activeProperty: activeProperty,
                 activeRow: activeRow,
                 mtId: this.mtId,
                 selection: selection,
