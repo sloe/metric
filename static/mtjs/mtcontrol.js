@@ -176,26 +176,41 @@ function MtControlShuttle () {
 
 
     this.onSelectionChange = function(event) {
-        if (event.mtId === this.mtId && this.activeRow !== event.activeRow) {
-            this.activeRow = event.activeRow;
-            if (!_.isUndefined(event.values[this.propertyName])) {
-                this.setValue(event.values[this.propertyName]);
+        var css, opacity;
+        if (event.mtId === this.mtId) {
+
+            if (_.contains(['start_time', 'end_time'], this.propertyName) && event.activeProperty === this.propertyName) {
+                css = {'border-color': '#af8'} // '#af8' or '#8df'
+                opacity = 1.0;
+            } else {
+                css = {'border-color': '#fff'}
+                opacity = 1.0;
             }
-            mtlog.log('MtControlShuttle.onSelectionChange: ' + JSON.stringify(event));
+
+            this.coarseElem.parent().parent().parent().parent().fadeTo(150, opacity).css(css);
+            this.fineElem.parent().parent().parent().parent().fadeTo(150, opacity).css(css);
+
+            if (this.activeRow !== event.activeRow) {
+                this.activeRow = event.activeRow;
+                if (!_.isUndefined(event.values[this.propertyName])) {
+                    this.setValue(event.values[this.propertyName]);
+                }
+                mtlog.log('MtControlShuttle.onSelectionChange: ' + JSON.stringify(event));
+            }
         }
     };
 
 
     this.onMtParamCollectionValueBroadcast = function(models, options) {
-        mtlog.log('MtControlShuttle.onMtParamCollectionValueBroadcast: ' + JSON.stringify(models) + ', ' + JSON.stringify(options));
+        // mtlog.log('MtControlShuttle.onMtParamCollectionValueBroadcast: ' + JSON.stringify(models) + ', ' + JSON.stringify(options));
         _.each(models, function(model, options) {
-            if (model.attributes.param === 'speed_factor' && this.typeName == 'duration') {
+            if (model.attributes.param === 'speed_factor' && this.typeName === 'duration') {
                 this.fineSlider.update({min: -Math.min(model.attributes.value), max: Math.ceil(model.attributes.value)});
-            } else if (model.attributes.param === 'video_duration' && this.typeName == 'duration') {
+            } else if (model.attributes.param === 'video_duration' && this.typeName === 'duration') {
                 this.coarseSlider.update({max: Math.ceil(model.attributes.value)});
-            } else if (model.attributes.param === 'min_rate_per_min' && this.typeName == 'rate_per_min') {
+            } else if (model.attributes.param === 'min_rate_per_min' && this.typeName === 'rate_per_min') {
                 this.coarseSlider.update({min: Math.floor(model.attributes.value)});
-            } else if (model.attributes.param === 'max_rate_per_min' && this.typeName == 'rate_per_min') {
+            } else if (model.attributes.param === 'max_rate_per_min' && this.typeName === 'rate_per_min') {
                 this.coarseSlider.update({max: Math.ceil(model.attributes.value)});
             }
         }, this);

@@ -74,7 +74,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
         this.mtId = options.mtId;
         this.mtParamProvider = options.mtParamProvider;
         this.url = '/apiv1/interval/' + this.datasetId;
-        this.on('all', this.onAll, this);
+        // this.on('all', this.onAll, this);
         this.on('add', this.onAdd, this);
         this.on('change', this.onChange, this);
         Backbone.Mediator.subscribe('mt:controlChangedValue', this.onMtControlChangedValueOrFinish, this);
@@ -107,6 +107,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
         return this.fetch({
             error: this.loadInitialErrorCallback,
             originator: 'fetch',
+            source: 'model',
             success: this.loadInitialSuccessCallback
         });
     },
@@ -120,8 +121,8 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     saveAll: function() {
-        _.each(this.models, function(model, row_index) {
-            model.save(null, {url: this.url + '/' + row_index});
+        _.each(this.models, function(model, rowIndex) {
+            model.save(null, {url: this.url + '/' + rowIndex});
         }, this);
     },
 
@@ -174,11 +175,15 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
     onChange: function(model, options) {
         var message = ['MtIntervalCollection.onChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
+        var rowIndex;
+
         mtlog.log(message);
 
         if (!options.originator && model.changed) {
             options.originator = _.keys(model.changed)[0]
         }
+
+        options.row = this.indexOf(model);
 
         model.recalculate(options);
 
@@ -207,9 +212,9 @@ var MtIntervalCollection = Backbone.Collection.extend({
     onMtIntervalRowsDeleted: function(event) {
         mtlog.log('MtIntervalCollection.onMtIntervalRowsDeleted: ' + JSON.stringify(event));
         if (event.mtId === this.mtId) {
-            for (var row_index = event.index; row_index < event.index + event.amount; row_index++) {
-                var model_to_destroy = this.at(row_index);
-                model_to_destroy.destroy({source: event.source, url: this.url + '/' + row_index});
+            for (var rowIndex = event.index; rowIndex < event.index + event.amount; rowIndex++) {
+                var model_to_destroy = this.at(rowIndex);
+                model_to_destroy.destroy({source: event.source, url: this.url + '/' + rowIndex});
             }
         }
     },
@@ -226,12 +231,12 @@ var MtIntervalCollection = Backbone.Collection.extend({
 var MtParamModel = Backbone.Model.extend({
     recalculate: function(options) {
         if (options.originator !== 'fetch' && (_.isUndefined(options.ongoing) || !options.ongoing)) {
-            var row_index = this.collection.indexOf(this);
-            if (!_.isUndefined(row_index)) {
-                if (row_index < 0) {
-                    mtlog.log('MtIntervalModel.recalculate: Bad row index ' + row_index);
+            var rowIndex = this.collection.indexOf(this);
+            if (!_.isUndefined(rowIndex)) {
+                if (rowIndex < 0) {
+                    mtlog.log('MtIntervalModel.recalculate: Bad row index ' + rowIndex);
                 } else {
-                    this.save(null, {url: this.collection.url + '/' + row_index});
+                    this.save(null, {url: this.collection.url + '/' + rowIndex});
                 }
             }
         }
@@ -298,8 +303,8 @@ var MtParamCollection = Backbone.Collection.extend({
 
 
     onChange: function(model, options) {
-        var message = ['MtParamCollection.onChange: ', JSON.stringify(model), ', ', JSON.stringify(options)].join('');
-        mtlog.log(message);
+        // var message = ['MtParamCollection.onChange: ', JSON.stringify(model), ', ', JSON.stringify(options)].join('');
+        // mtlog.log(message);
 
         if (!options.originator) {
             options.originator = model.attributes.param;
@@ -312,8 +317,8 @@ var MtParamCollection = Backbone.Collection.extend({
 
 
     onUpdate: function(collection, options) {
-        var message = ['MtParamCollection.onChange: ', JSON.stringify(collection), ', ', JSON.stringify(options)].join('');
-        mtlog.log(message);
+        // var message = ['MtParamCollection.onChange: ', JSON.stringify(collection), ', ', JSON.stringify(options)].join('');
+        // mtlog.log(message);
 
         if (!options.originator) {
             options.originator = 'update';

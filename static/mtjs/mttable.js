@@ -275,13 +275,13 @@ function MtParamTable () {
 
 
     this.onParamCollectionUpdate = function(collection, options) {
-        mtlog.log('MtParamTable.onParamCollectionUpdate: ' + (collection.mtName && collection.mtName()) + ', ' + JSON.stringify(options));
+        // mtlog.log('MtParamTable.onParamCollectionUpdate: ' + (collection.mtName && collection.mtName()) + ', ' + JSON.stringify(options));
         this.hot.render();
     };
 
 
     this.onMtParamCollectionValueBroadcast = function(models, options) {
-        mtlog.log('MtParamTable.onMtParamCollectionValueBroadcast: ' + JSON.stringify(models) + ', ' + JSON.stringify(options));
+        // mtlog.log('MtParamTable.onMtParamCollectionValueBroadcast: ' + JSON.stringify(models) + ', ' + JSON.stringify(options));
         this.hot.render();
     };
 

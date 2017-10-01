@@ -19,6 +19,7 @@ MtYouTubePlayer.prototype.create = function(mtId, alienKey, isMaster) {
     this.initState = 0;
     this.isReady = false;
     this.lastSeek = null;
+    this.mouseOverPlayer = null;
     this.loadedFraction = 0;
     this.propertyType = 'select';
     this.sourceName = 'player';
@@ -27,7 +28,12 @@ MtYouTubePlayer.prototype.create = function(mtId, alienKey, isMaster) {
     this.captionElem = $('#' + elemPrefix + '_caption');
 
     var playerElemId = elemPrefix + '_player';
+    var playerParentElemId = elemPrefix + '_playerparent';
     this.playerElem = $('#' + playerElemId);
+    this.playerElemParent = $('#' + playerParentElemId);
+
+    this.playerElemParent.on("mouseover", null, {actualThis: this}, this.onMouseOver);
+    this.playerElemParent.on("mouseout", null, {actualThis: this}, this.onMouseOut);
 
     this.player = new YT.Player(playerElemId, {
         height: '390',
@@ -40,9 +46,19 @@ MtYouTubePlayer.prototype.create = function(mtId, alienKey, isMaster) {
         }
     });
 
-    Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
+    Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtIntervalCollectionValueChange, this);
     Backbone.Mediator.subscribe('mt:selectionChange', this.onSelectionChange, this);
 };
+
+
+MtYouTubePlayer.prototype.onMouseOver = function(event) {
+    event.data.actualThis.mouseOverPlayer = true;
+}
+
+
+MtYouTubePlayer.prototype.onMouseOut = function(event) {
+    event.data.actualThis.mouseOverPlayer = false;
+}
 
 
 MtYouTubePlayer.prototype.timerTick = function() {
@@ -71,16 +87,20 @@ MtYouTubePlayer.prototype.timerTick = function() {
         if (this.inhibitNextChangeEvent) {
             mtlog.log('Inhibiting change from ' + oldCurrentTime + ' to ' + newCurrentTime);
             this.inhibitNextChangeEvent = false;
+        } else if (!this.mouseOverPlayer && this.playerState !== YT.PlayerState.PLAYING) {
+            mtlog.log('Non-mouseover change from ' + oldCurrentTime + ' to ' + newCurrentTime);
         } else {
             mtlog.log('Sending change from ' + oldCurrentTime + ' to ' + newCurrentTime);
-            if (this.playerState == YT.PlayerState.PLAYING) {
+            if (this.playerState === YT.PlayerState.PLAYING) {
                 this.publishControlChangedValue();
             } else {
                 this.publishControlFinish();
             }
         }
     }
-    mtlog.log('Tick, hasChanged=' + hasChanged);
+    if (hasChanged) {
+        mtlog.log('Tick, hasChanged=' + hasChanged);
+    }
     return hasChanged;
 };
 
@@ -102,7 +122,7 @@ MtYouTubePlayer.prototype.timerTickWrapper = function() {
 };
 
 
-MtYouTubePlayer.prototype.onMtCollectionValueChange = function(model, options) {
+MtYouTubePlayer.prototype.onMtIntervalCollectionValueChange = function(model, options) {
     if (model.collection.mtId === this.mtId && options.row === this.activeRow && model.changed) {
         if (options.source !== this.sourceName) { // Don't respond to our own events
             _.each(model.changed, function(value, property) {
@@ -144,7 +164,7 @@ MtYouTubePlayer.prototype.updateCaption = function() {
     } else if (this.playerState == YT.PlayerState.PLAYING) {
          playerStateStr = 'PLAYING';
     } else if (this.playerState == YT.PlayerState.PAUSED) {
-         playerStateStr = 'PAUSED';
+         playerStateStr = 'HALTED';
     } else if (this.playerState == YT.PlayerState.BUFFERING) {
          playerStateStr = 'BUFFERING';
     } else if (this.playerState == YT.PlayerState.CUED) {
@@ -195,9 +215,6 @@ MtYouTubePlayer.prototype.readMetadataFromPlayer = function(event) {
 
 MtYouTubePlayer.prototype.onPlayerReady = function(event) {
     this.isReady = true;
-    if (this.isMaster) {
-        this.readMetadataFromPlayer();
-    }
     this.player.pauseVideo();
     this.player.seekTo(0);
     setTimeout(this.timerTickWrapper.bind(this), this.hotTickDelay);
@@ -210,6 +227,9 @@ MtYouTubePlayer.prototype.onPlayerStateChange = function(event) {
     if (this.initState === 0 && event.data === YT.PlayerState.PLAYING) {
         this.initState = 1;
         this.doPause();
+        if (this.isMaster) {
+            this.readMetadataFromPlayer();
+        }
         if (!_.isNull(this.lastSeek)) {
             this.doSilentSeek(this.lastSeek);
         }
