@@ -3,7 +3,7 @@ USER_BASE=~/.local/bin
 ROOT=/srv
 APP_URL=https://github.com/sloe/metric.git
 WEB2PY_GITURL=https://github.com/web2py/web2py.git
-WEB2PY_BRANCH=R-2.15.4
+WEB2PY_BRANCH=master
 
 APPNAME=metric
 APPBRANCH=metric
