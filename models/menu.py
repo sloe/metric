@@ -18,5 +18,6 @@ response.menu = [
         (T("Item types"), False, URL("debug", "itemtype"), []),
         (T("Searches"), False, URL("debug", "search"), []),
         (T("Users"), False, URL("debug", "user"), [])
-    ])
+    ]),
+    (T('Privacy Policy'),URL('default','privacy')==URL(),URL('default','privacy'),[])
 ]

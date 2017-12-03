@@ -164,7 +164,7 @@ MtYouTubePlayer.prototype.updateCaption = function() {
     } else if (this.playerState == YT.PlayerState.PLAYING) {
          playerStateStr = 'PLAYING';
     } else if (this.playerState == YT.PlayerState.PAUSED) {
-         playerStateStr = 'HALTED';
+         playerStateStr = 'PAUSED';
     } else if (this.playerState == YT.PlayerState.BUFFERING) {
          playerStateStr = 'BUFFERING';
     } else if (this.playerState == YT.PlayerState.CUED) {
