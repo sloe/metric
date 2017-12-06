@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 ### required - do no delete
-def user(): return dict(form=auth())
+def user():
+    return dict(
+        form=auth(),
+        token_url=URL('default', 'user', 'login', scheme=True)
+    )
+
+
 def download(): return response.download(request,db)
 def call(): return service()
 ### end requires

@@ -111,12 +111,30 @@ auth.settings.registration_requires_approval = False
 auth.settings.reset_password_requires_verification = True
 
 from gluon.contrib.login_methods.rpx_account import RPXAccount
-auth.settings.actions_disabled=['register','change_password','request_reset_password']
-auth.settings.login_form = RPXAccount(request,
-    api_key=myconf.get('janrain.apikey'),
-    domain='oarstack-metrics',
-    url = "https://metric.oarstack.com/%s/default/user/login" % request.application)
 
+class AuthFormRouter(object):
+    def __init__(self):
+        self.rpx_form = RPXAccount(request,
+            api_key=myconf.get('janrain.apikey'),
+            domain='oarstack-metrics',
+            embed=False)
+
+
+    def get_user(self):
+        return self.rpx_form.get_user()
+
+
+    def login_form(self):
+        if 'token' in request.vars:
+            return self.rpx_form
+        else:
+            auth.settings.login_form = auth
+            form = auth()
+            auth.settings.login_form = self
+            return form
+
+
+auth.settings.login_form = AuthFormRouter()
 
 # -------------------------------------------------------------------------
 # Define your tables below (or better in another model file) for example
