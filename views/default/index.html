@@ -26,4 +26,13 @@
 
 {{=form}}
 
+<hr/>
+{{if not auth.user:}}
 
+Log in to preserve your data:
+{{=LOAD('load', 'login.load', ajax=False, ajax_trap=True, args=['login'])}}
+
+Or {{=A('Sign Up', _href=URL('user', 'register'))}} with an email address.
+{{else:}}
+You are logged in as {{=XML(auth.user.first_name, sanitize=True)}} {{=XML(auth.user.last_name, sanitize=True)}}.
+{{pass}}

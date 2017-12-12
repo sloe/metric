@@ -91,7 +91,7 @@ plugins = PluginManager()
 # -------------------------------------------------------------------------
 # create all tables needed by auth if not custom tables
 # -------------------------------------------------------------------------
-auth.define_tables(username=True, signature=False)
+auth.define_tables(username=False, signature=True)
 
 # -------------------------------------------------------------------------
 # configure email
@@ -121,6 +121,10 @@ class AuthFormRouter(object):
 
 
     def get_user(self):
+        import urllib
+        LOGGER.error("https://rpxnow.com/api/v2/auth_info?" + urllib.urlencode(
+                dict(apiKey=self.rpx_form.api_key, token=request.vars.token)))
+
         return self.rpx_form.get_user()
 
 
@@ -133,7 +137,7 @@ class AuthFormRouter(object):
             auth.settings.login_form = self
             return form
 
-
+auth.settings.everybody_group_id = 1
 auth.settings.login_form = AuthFormRouter()
 
 # -------------------------------------------------------------------------
