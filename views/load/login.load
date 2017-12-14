@@ -1,8 +1,10 @@
 
-<h3>Social Log In</h3>
+
+<h4>Social Log In</h4>
 <div id="janrainEngageEmbed"></div>
-<h3>Alternative Email Log In</h3>
-<div style="width:600px;">
+<br/>
+<h4>Alternative Email Log In</h4>
+<div style="width:800px;">
 {{=form}}
 </div>
 
@@ -11,6 +13,7 @@
     if (typeof window.janrain !== 'object') window.janrain = {};
     if (typeof window.janrain.settings !== 'object') window.janrain.settings = {};
 
+    janrain.settings.format = "one column";
     janrain.settings.tokenUrl = '{{=XML(token_url)}}';
 
     function isReady() { janrain.ready = true; };
@@ -33,4 +36,22 @@
     var s = document.getElementById('janrainEngageEmbed');
     s.parentNode.insertBefore(e, s);
 })();
+
+$(document).ready(function() {
+    var timeMsec = 10;
+    fixJanrain = function() {
+        var janrainContent = $('.janrainContent');
+        var suffix = '; border: 2px solid rgb(176,176,176) !important;  border-radius: 0px !important;';
+        var currentStyle = $('.janrainContent').attr('style');
+        if (currentStyle && !currentStyle.endsWith(suffix)) {
+            janrainContent.attr('style', currentStyle + suffix);
+            console.log("Murgh");
+        }
+        timeMsec *= 2;
+        if (timeMsec < 10000) {
+            setTimeout(fixJanrain, timeMsec);
+        }
+    }
+    fixJanrain();
+});
 </script>

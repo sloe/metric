@@ -9,6 +9,7 @@ APPNAME=metric
 APPBRANCH=metric
 WEB2PY_DIR=$ROOT/web2py
 APP_PARENT_DIR=$WEB2PY_DIR/applications
+ADMIN_DIR=$APP_PARENT_DIR/admin
 APP_DIR=$APP_PARENT_DIR/$APPNAME
 APPCONFIG_LEAFNAME=appconfig.ini
 APPCONFIG_DEST=$APP_DIR/private/$APPCONFIG_LEAFNAME
@@ -65,15 +66,18 @@ do
   fi
 done
 
-cd $APP_DIR
 
-for dir in databases errors sessions uploads
+for parent in $APP_DIR $ADMIN_DIR
 do
-  if [ ! -d $dir ] ; then
-    mkdir $dir
-    chgrp mtgunic $dir
-    chmod g+rwx $dir
-  fi
+  cd $parent
+  for dir in databases errors private sessions uploads
+  do
+    if [ ! -d $dir ] ; then
+      mkdir $dir
+      chgrp mtgunic $dir
+      chmod g+rwx $dir
+    fi
+  done
 done
 
 export PIPENV_VENV_IN_PROJECT=1

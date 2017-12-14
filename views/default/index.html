@@ -3,6 +3,7 @@
 
 .w2p_fw {
   margin-right: 4px;
+  margin-bottom: 6px;
 }
 
 #submit_record__row {
@@ -29,10 +30,12 @@
 <hr/>
 {{if not auth.user:}}
 
-Log in to preserve your data:
+<div style="border: 2px solid rgb(192, 192, 192); background-color: #f0f0f0; padding-left: 10px; width: 418px;">
+<div style="padding-top: 8px;">Log in to preserve your data:</div>
 {{=LOAD('load', 'login.load', ajax=False, ajax_trap=True, args=['login'])}}
 
-Or {{=A('Sign Up', _href=URL('user', 'register'))}} with an email address.
+Or {{=A('Sign Up', _href=URL('user', 'register'))}} using an email address.
+</div>
 {{else:}}
 You are logged in as {{=XML(auth.user.first_name, sanitize=True)}} {{=XML(auth.user.last_name, sanitize=True)}}.
 {{pass}}
