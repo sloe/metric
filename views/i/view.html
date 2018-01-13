@@ -12,6 +12,15 @@ function onYouTubeIframeAPIReady() {
 }
 //->></script>
 
+{{ write_mt_control_bar(mode) }}
+
+<script>
+    controlbar = new MtControlBar();
+    $(function () {
+        controlbar.create("{{=base_url}}");
+    });
+</script>
+
 <table>
 <tr><td><div id="player0_select_playerparent"><div id="player0_select_player">Loading...</div></div></td></tr>
 <tr><td><div id="player0_select_caption">Loading...</div></td></tr>

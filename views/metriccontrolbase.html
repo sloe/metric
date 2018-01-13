@@ -6,8 +6,22 @@
 
 <script src="{{=URL('static', 'js/ion.rangeSlider.js')}}"></script>
 <script src="{{=URL('static', 'mtjs/mtcontrol.js')}}"></script>
+<script src="{{=URL('static', 'mtjs/mtcontrolbar.js')}}"></script>
 
 {{
+def write_mt_control_bar(mode):
+    if mode == 'edit':
+        response.write(BUTTON("Save", _class="control_bar_button control_bar_button_right control_bar_button_save"))
+        response.write(BUTTON("Discard Changes", _class="control_bar_button control_bar_button_right control_bar_button_discard"))
+    elif mode == 'view':
+        response.write(BUTTON("Edit", _class="control_bar_button control_bar_button_right control_bar_button_edit"))
+    else:
+        response.write("Improper mode, please reload")
+    pass
+
+    pass # Terminates function
+
+
 def write_mt_control_interval(id):
     style = "width:640px;"
     parent_style = "border: solid; border-color: #fff;"

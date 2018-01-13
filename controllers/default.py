@@ -30,9 +30,11 @@ def index():
 
 
     if form.process().accepted:
-        match = re.match(r'https?://youtu.be/([-_0-9A-Za-z]{6,64})', form.vars.f_query)
+        match = re.match(r'https?://youtu.be/([-_0-9A-Za-z]{8,12})', form.vars.f_query)
         if not match:
-            match = re.match(r'https?://www.youtube.com/watch\?v=([-_0-9A-Za-z]{6,64})', form.vars.f_query)
+            match = re.match(r'https?://www.youtube.com/watch\?v=([-_0-9A-Za-z]{8,12})', form.vars.f_query)
+        if not match:
+            match = re.match(r'([-_0-9A-Za-z]{8,12})$', form.vars.f_query)
         if match:
             yt_key = match.group(1)
             destination = URL('i', 'yt', args=[yt_key])
