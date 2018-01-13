@@ -141,6 +141,9 @@ class AuthFormRouter(object):
 auth.settings.everybody_group_id = 1
 auth.settings.login_form = AuthFormRouter()
 
+from gluon import current
+current.auth = auth
+
 # -------------------------------------------------------------------------
 # Define your tables below (or better in another model file) for example
 #

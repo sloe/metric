@@ -31,5 +31,3 @@ def get_or_create_item(itemtype, alien_key):
         item_row = create_item(itemtype, alien_key)
     return item_row
 
-
-
