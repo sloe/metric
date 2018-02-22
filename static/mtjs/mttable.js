@@ -86,6 +86,7 @@ function MtIntervalTable () {
 
         Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
         Backbone.Mediator.subscribe('mt:controlFinish', this.onMtControlFinish, this);
+        Backbone.Mediator.subscribe('mt:setSelection', this.onMtSetSelection, this);
     };
 
 
@@ -212,6 +213,27 @@ function MtIntervalTable () {
             var column = this.propertyNameToColumn(change.property);
             this.hot.selectCell(options.row, column, options.row, column, false);
 
+            this.hot.render();
+        }
+    };
+
+
+    this.onMtSetSelection = function(event) {
+        mtlog.log('MtIntervalTable.onMtSetSelection: ' + JSON.stringify(event));
+
+        var options = event.options;
+        var row;
+
+        if (options.mtId === this.mtId && event.changes && options.source !== 'table') {
+            var column = this.propertyNameToColumn(event.changes.activeProperty);
+            var selection = this.hot.getSelected();
+            if (selection) {
+                row = selection[0];
+            } else {
+                row = 0;
+            }
+
+            this.hot.selectCell(row, column, row, column, false);
             this.hot.render();
         }
     };

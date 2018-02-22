@@ -13,6 +13,7 @@ function MtControlShuttle () {
 
         var elemPrefix = '#slider' + mtId + '_' + propertyName;
         this.coarseElem = $(elemPrefix + '_coarse');
+        this.containerElem = $(elemPrefix + '_container');
         this.fineElem = $(elemPrefix + '_fine');
         this.valueElem = $(elemPrefix + '_value');
 
@@ -130,9 +131,11 @@ function MtControlShuttle () {
         this.coarseSlider = this.coarseElem.data("ionRangeSlider");
         this.fineSlider = this.fineElem.data("ionRangeSlider");
 
-        Backbone.Mediator.subscribe('mt:selectionChange', this.onSelectionChange, this);
+        Backbone.Mediator.subscribe('mt:selectionChange', this.onMtSelectionChange, this);
         Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
         Backbone.Mediator.subscribe('mt:paramCollectionValueBroadcast', this.onMtParamCollectionValueBroadcast, this);
+
+        this.containerElem.click(this.onClickContainer.bind(this));
 
         return this;
     };
@@ -150,6 +153,19 @@ function MtControlShuttle () {
             }
         }
     };
+
+
+    this.onClickContainer = function(event) {
+        Backbone.Mediator.publish('mt:setSelection', {
+            changes: {
+                activeProperty: this.propertyName
+            },
+            options: {
+                mtId: this.mtId,
+                source: this.sourceName
+            }
+        });
+    }
 
 
     this.onMtCollectionValueChange = function(model, options) {
@@ -175,11 +191,11 @@ function MtControlShuttle () {
     };
 
 
-    this.onSelectionChange = function(event) {
+    this.onMtSelectionChange = function(event) {
         var css, opacity;
         if (event.mtId === this.mtId) {
 
-            if (_.contains(['start_time', 'end_time'], this.propertyName) && event.activeProperty === this.propertyName) {
+            if (event.activeProperty === this.propertyName) {
                 css = {'border-color': '#af8'} // '#af8' or '#8df'
                 opacity = 1.0;
             } else {
@@ -187,15 +203,14 @@ function MtControlShuttle () {
                 opacity = 1.0;
             }
 
-            this.coarseElem.parent().parent().parent().parent().fadeTo(150, opacity).css(css);
-            this.fineElem.parent().parent().parent().parent().fadeTo(150, opacity).css(css);
+            this.containerElem.fadeTo(150, opacity).css(css);
 
             if (this.activeRow !== event.activeRow) {
                 this.activeRow = event.activeRow;
                 if (!_.isUndefined(event.values[this.propertyName])) {
                     this.setValue(event.values[this.propertyName]);
                 }
-                mtlog.log('MtControlShuttle.onSelectionChange: ' + JSON.stringify(event));
+                mtlog.log('MtControlShuttle.onMtSelectionChange: ' + JSON.stringify(event));
             }
         }
     };

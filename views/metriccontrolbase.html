@@ -32,16 +32,16 @@ def write_mt_control_interval(id):
     response.write(TABLE(
         TR(TD(TABLE(TR(TD(INPUT(_class='slider%d_start_time' % id, _id='slider%d_start_time_coarse' % id, _type='text', _value="Loading..."), _style=style)),
             TR(TD(INPUT(_class='slider%d_start_time' % id, _id='slider%d_start_time_fine' % id, _type='text', _value="Loading..."), _style=style))
-        , _style=parent_style))),
+        , _class='slider%d_container' % id, _id='slider%d_start_time_container' % id, _style=parent_style))),
         TR(TD(TABLE(TR(TD(INPUT(_class='slider%d_end_time' % id, _id='slider%d_end_time_coarse' % id, _type='text', _value="Loading..."), _style=style)),
             TR(TD(INPUT(_class='slider%d_end_time' % id, _id='slider%d_end_time_fine' % id, _type='text', _value="Loading..."), _style=style))
-        , _style=parent_style))),
+        , _class='slider%d_container' % id, _id='slider%d_end_time_container' % id, _style=parent_style))),
         TR(TD(TABLE(TR(TD(INPUT(_class='slider%d_num_events' % id, _id='slider%d_num_events_coarse' % id, _type='text', _value="Loading..."), _style=style)),
             TR(TD(INPUT(_class='slider%d_num_events' % id, _id='slider%d_num_events_fine' % id, _type='text', _value="Loading..."), _style=style))
-        , _style=parent_style))),
+        , _class='slider%d_container' % id, _id='slider%d_num_events_container' % id, _style=parent_style))),
         TR(TD(TABLE(TR(TD(INPUT(_class='slider%d_rate' % id, _id='slider%d_rate_coarse' % id, _type='text', _value="Loading..."), _style=style)),
             TR(TD(INPUT(_class='slider%d_rate' % id, _id='slider%d_rate_fine' % id, _type='text', _value="Loading..."), _style=style))
-        , _style=parent_style)))
+        , _class='slider%d_container' % id, _id='slider%d_rate_container' % id, _style=parent_style)))
     ))
     pass
 }}
