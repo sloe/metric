@@ -17,7 +17,6 @@ var MtIntervalModel = Backbone.Model.extend({
             this.set({num_events: newNumEvents}, options);
         }
 
-
         if (options.originator === 'fetch' || (options.originator !== 'interval' && _.isUndefined(this.changed.interval))) {
             var newInterval = parseFloat(attr.end_time) - parseFloat(attr.start_time);
             this.set({interval: newInterval}, options);

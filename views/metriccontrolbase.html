@@ -29,19 +29,33 @@ def write_mt_control_bar(mode):
 def write_mt_control_interval(id):
     style = "width:640px;"
     parent_style = "border: solid; border-color: #fff;"
+
+    def __control_title(property_name, heading, subheading):
+        prefix = "slider%d_%s" % (id, property_name)
+        content = [
+            DIV("%s " % heading, _class="mt_control_heading %s_mt_control_heading" % prefix, _id='%s_heading' % prefix),
+            DIV(subheading, _class="mt_control_subheading %s_mt_control_subheading" % prefix, _id='%s_subheading' % prefix)
+        ]
+
+        return SPAN(*content, _class="mt_control_banner %s_mt_control_banner" % prefix, _id='%s_banner' % prefix)
+
+    def __single_control(property_name):
+        prefix = "slider%d_%s" % (id, property_name)
+        content = TABLE(
+            TR(TD(INPUT(_id='%s_coarse' % prefix, _type='text', _value="Loading..."), _style=style)),
+            TR(TD(INPUT(_id='%s_fine' % prefix, _type='text', _value="Loading..."), _style=style), _id='%s_fine_row' % prefix),
+            _id='%s_container' % prefix, _style=parent_style)
+        return content
+
     response.write(TABLE(
-        TR(TD(TABLE(TR(TD(INPUT(_class='slider%d_start_time' % id, _id='slider%d_start_time_coarse' % id, _type='text', _value="Loading..."), _style=style)),
-            TR(TD(INPUT(_class='slider%d_start_time' % id, _id='slider%d_start_time_fine' % id, _type='text', _value="Loading..."), _style=style))
-        , _class='slider%d_container' % id, _id='slider%d_start_time_container' % id, _style=parent_style))),
-        TR(TD(TABLE(TR(TD(INPUT(_class='slider%d_end_time' % id, _id='slider%d_end_time_coarse' % id, _type='text', _value="Loading..."), _style=style)),
-            TR(TD(INPUT(_class='slider%d_end_time' % id, _id='slider%d_end_time_fine' % id, _type='text', _value="Loading..."), _style=style))
-        , _class='slider%d_container' % id, _id='slider%d_end_time_container' % id, _style=parent_style))),
-        TR(TD(TABLE(TR(TD(INPUT(_class='slider%d_num_events' % id, _id='slider%d_num_events_coarse' % id, _type='text', _value="Loading..."), _style=style)),
-            TR(TD(INPUT(_class='slider%d_num_events' % id, _id='slider%d_num_events_fine' % id, _type='text', _value="Loading..."), _style=style))
-        , _class='slider%d_container' % id, _id='slider%d_num_events_container' % id, _style=parent_style))),
-        TR(TD(TABLE(TR(TD(INPUT(_class='slider%d_rate' % id, _id='slider%d_rate_coarse' % id, _type='text', _value="Loading..."), _style=style)),
-            TR(TD(INPUT(_class='slider%d_rate' % id, _id='slider%d_rate_fine' % id, _type='text', _value="Loading..."), _style=style))
-        , _class='slider%d_container' % id, _id='slider%d_rate_container' % id, _style=parent_style)))
+        TR(TD(__control_title('start_time', 'Start time', 'Adjust to show blades halfway into the water at the catch, using the coarse and fine adjusters'))),
+        TR(TD(__single_control('start_time'))),
+        TR(TD(__control_title('end_time', 'End time', 'Adjust to show blades halfway into the water for a subsequent stroke'))),
+        TR(TD(__single_control('end_time'))),
+        TR(TD(__control_title('num_events', 'Number of strokes', 'Adjust to the number of strokes between start and end'))),
+        TR(TD(__single_control('num_events'))),
+        TR(TD(__control_title('rate', 'Rate', 'This will calculate itself, or you can drag it to the estimated rate to guess the number of strokes'))),
+        TR(TD(__single_control('rate')))
     ))
     pass
 }}

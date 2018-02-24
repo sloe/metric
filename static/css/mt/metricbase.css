@@ -2,3 +2,11 @@
 .control_bar_button_right {
     float:right;
 }
+
+.mt_control_heading {
+    font-size: 20px;
+}
+
+.mt_control_subheading {
+    font-size: 12px;
+}

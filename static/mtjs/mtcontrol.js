@@ -15,9 +15,11 @@ function MtControlShuttle () {
         this.coarseElem = $(elemPrefix + '_coarse');
         this.containerElem = $(elemPrefix + '_container');
         this.fineElem = $(elemPrefix + '_fine');
+        this.fineElemRow = $(elemPrefix + '_fine_row');
         this.valueElem = $(elemPrefix + '_value');
 
         var coarsePrettify, finePrettify;
+
         if (typeName === 'duration') {
             var momentFormat;
             if (maxValue >= 3600) {
@@ -28,6 +30,7 @@ function MtControlShuttle () {
 
             this.coarseStep = 0.1;
             this.fineRange = 1.0;
+            this.hasFine = true;
 
             coarsePrettify = function(num) {
                 var m = moment(num, "X");
@@ -43,6 +46,8 @@ function MtControlShuttle () {
         } else if (typeName === 'count') {
             this.coarseStep = 1;
             this.fineRange = 1;
+            this.hasFine = false;
+
             coarsePrettify = function(num) {
                 return num.toFixed(0);
             };
@@ -56,6 +61,8 @@ function MtControlShuttle () {
         } else if (typeName === 'rate_per_min') {
             this.coarseStep = 0.1;
             this.fineRange = 1.0;
+            this.hasFine = false;
+
             coarsePrettify = function(num) {
                 return num.toFixed(1);
             };
@@ -131,11 +138,15 @@ function MtControlShuttle () {
         this.coarseSlider = this.coarseElem.data("ionRangeSlider");
         this.fineSlider = this.fineElem.data("ionRangeSlider");
 
+        if (!this.hasFine) {
+            this.fineElemRow.hide()
+        }
+
         Backbone.Mediator.subscribe('mt:selectionChange', this.onMtSelectionChange, this);
         Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
         Backbone.Mediator.subscribe('mt:paramCollectionValueBroadcast', this.onMtParamCollectionValueBroadcast, this);
 
-        this.containerElem.click(this.onClickContainer.bind(this));
+        this.containerElem.mousedown(this.onClickContainer.bind(this));
 
         return this;
     };
@@ -269,8 +280,8 @@ function MtControlInterval () {
         this.shuttles = {
             start_time: new MtControlShuttle().create(mtId, 'start_time', 'duration', 0, durationSecs),
             end_time: new MtControlShuttle().create(mtId, 'end_time', 'duration', 0, durationSecs),
-            num_events:  new MtControlShuttle().create(mtId, 'num_events', 'count', 1, 200),
-            rate:  new MtControlShuttle().create(mtId, 'rate', 'rate_per_min', 10, 60)
+            num_events: new MtControlShuttle().create(mtId, 'num_events', 'count', 1, 200),
+            rate: new MtControlShuttle().create(mtId, 'rate', 'rate_per_min', 10, 60)
         };
     };
 };
