@@ -14,6 +14,8 @@ MtChart.prototype.create = function(gdata, mtId, intervalCollection) {
 
     this.propertyType = 'rate';
     this.sourceName = 'chart';
+    this.lastUpdateMsec = 0;
+    this.transitionMsec = 500;
 
     var chartElemId = elemPrefix + '_' + this.propertyType;
 
@@ -51,7 +53,8 @@ MtChart.prototype.create = function(gdata, mtId, intervalCollection) {
             ],
             selection: {
                 enabled: true
-            }
+            },
+            type: 'spline'
         },
         grid: {
             y: {
@@ -66,7 +69,14 @@ MtChart.prototype.create = function(gdata, mtId, intervalCollection) {
                 title: function (d) { return 'Midpoint ' + d.toFixed(3) + 's'; },
                 value: d3.format('.3f')
             }
+        },
+        transition: {
+            duration: this.transitionMsec
+        },
+        zoom: {
+            enabled: false // Not working
         }
+
     });
 
     Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtIntervalCollectionValueChange, this);
@@ -108,17 +118,39 @@ MtChart.prototype._updateFromModel = function(model, options) {
             ['ratex'].concat(data.ratex),
           ]
     });
+
+    this.lastUpdateMsec = Date.now();
 }
 
 
 MtChart.prototype.onMtIntervalCollectionValueChange = function(model, options) {
-    if (model.collection.mtId === this.mtId && model.changed) {
-        if (options.source !== this.sourceName) { // Don't respond to our own events
+
+    if (model.collection.mtId === this.mtId && model.changed && options.source !== this.sourceName) {
+        if (options.ongoing) {
+            var msecSinceLast = Date.now() - this.lastUpdateMsec;
+            this.chart.unselect(['rate']);
+            clearTimeout(this.updateTimeout);
+            var boundCall = (function(model, options) { this._updateFromModel(model, options); }).bind(this);
+            var fractionOfTransitionMsec = this.transitionMsec / 2;
+            if  (msecSinceLast < fractionOfTransitionMsec) {
+                this.updateTimeout = setTimeout(boundCall, fractionOfTransitionMsec - msecSinceLast, model, options);
+            } else {
+                this._updateFromModel(model, options);
+            }
+        } else {
+            clearTimeout(this.updateTimeout);
             this._updateFromModel(model, options);
+            if (_.isFinite(this.activeRow) && !_.isUndefined(options.source) && options.source.startsWith('slider:')) {
+                this.chart.select(['rate'], [this.activeRow]);
+            } else {
+                this.chart.unselect(['rate']);
+            }
         }
     }
 };
 
 
 MtChart.prototype.onSelectionChange = function(event) {
+    this.activeRow = event.activeRow;
+    this.chart.select(['rate'], [this.activeRow], true);
 };
