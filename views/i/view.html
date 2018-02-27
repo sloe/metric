@@ -3,9 +3,14 @@
 {{include 'metricbase.html'}}
 {{include 'metricytbase.html'}}
 {{include 'metriccontrolbase.html'}}
+{{include 'metricchartbase.html'}}
 
 
 <script type="text/javascript"><!--
+
+var gdata = new MtGlobal();
+gdata.create("{{=gdata_served_jb64}}");
+
 player = new MtYouTubePlayer();
 function onYouTubeIframeAPIReady() {
     player.create(0, '{{=item_row.f_alien_key}}', true);
@@ -26,16 +31,24 @@ function onYouTubeIframeAPIReady() {
 <tr><td><div id="player0_select_caption">Loading...</div></td></tr>
 </table>
 
-{{ write_mt_control_interval(0) }}
-
+{{
+if mode == 'edit':
+    write_mt_control_interval(0)
+}}
 <script>
     interval = new MtControlInterval();
     $(function () {
         interval.create(0, 600);
     });
 </script>
+{{
+pass
+}}
+
+
 
 <div id="intervaltable0"></div>
+<div id="chart0_rate"></div>
 <div id="paramtable0"></div>
 
 <script>
@@ -44,41 +57,21 @@ var paramCollection = new MtParamCollection(null, {datasetId: datasetId, mtId: 0
 var intervalCollection = new MtIntervalCollection(null, {datasetId: datasetId, mtId: 0, mtParamProvider: paramCollection});
 var intervalTable = new MtIntervalTable();
 var paramTable = new MtParamTable();
+var chartRate = new MtChart();
 
 $(function () {
     paramTable.create(0, paramCollection);
-    intervalTable.create(0, intervalCollection);
+    intervalTable.create(gdata, 0, intervalCollection);
+    chartRate.create(gdata, 0, intervalCollection);
     var loadIntervalJob = intervalCollection.loadInitial();
     var loadParamJob = paramCollection.loadInitial();
     $.when(loadIntervalJob, loadParamJob).done(function () {
         intervalCollection.recalculateAll({originator: 'fetch'});
     });
 
-    $('#mt-sync-info').text('Data loaded');
 });
 
-function MtController() {
-    this.doSave = function() {
-        $('#mt-sync-info').text('Saving...');
-        intervalCollection.saveAll();
-        $('#mt-sync-info').text('All changes saved');
-    }
-};
-
-pageController = new MtController();
-
 </script>
-
-<div onclick="pageController.doSave();">{{=BUTTON("Save")}}</div>
-<div id="mt-sync-info">Loading...</div>
-<hr/>
-
-<div onclick="player.doPause()">{{=BUTTON("Pause")}}</div>
-<div onclick="player.doSeek(10)">{{=BUTTON("Seek")}}</div>
-<div onclick="player.doNudge(-0.1)">{{=BUTTON("Nudge")}}</div>
-<div onclick="player.doNudge(12)">{{=BUTTON("Big Nudge")}}</div>
-<div onclick="player.setSize(1280, 720)">{{=BUTTON("Bigger")}}</div>
-<div onclick="player.setSize(640, 360)">{{=BUTTON("Smaller")}}</div>
 
 End.
 

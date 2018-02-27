@@ -1,4 +1,6 @@
 
+import base64
+import json
 
 import metric.dataset
 import metric.item
@@ -31,9 +33,15 @@ def yt():
 
     response.view = 'i/view.html'
 
+    gdata_served = Storage()
+    gdata_served.readonly = (mode != 'edit')
+    gdata_served_json = json.dumps(gdata_served, separators=(',', ':'))
+    gdata_served_jb64 = base64.b64encode(gdata_served_json)
+
     return dict(
         base_url=base_url,
         dataset_id=dataset_id,
+        gdata_served_jb64=gdata_served_jb64,
         item_row=item_row,
         mode=mode,
         requester_can_write=requester_can_write

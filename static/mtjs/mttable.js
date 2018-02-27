@@ -3,7 +3,8 @@
 
 function MtIntervalTable () {
 
-    this.create = function(mtId, intervalCollection) {
+    this.create = function(gdata, mtId, intervalCollection) {
+        this.gdata = gdata;
         this.mtId = mtId;
         this.intervalCollection = intervalCollection;
 
@@ -70,6 +71,7 @@ function MtIntervalTable () {
             minSpareRows: 0,
             minSpareCols: 0,
             outsideClickDeselects : false,
+            readOnly: this.gdata.served.readonly,
             rowHeaders: true
         });
 
