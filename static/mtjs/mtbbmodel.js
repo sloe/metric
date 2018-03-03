@@ -121,9 +121,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     saveAll: function() {
-        _.each(this.models, function(model, rowIndex) {
-            model.save(null, {url: this.url + '/' + rowIndex + '?_token=' + this.gdata.served.jwtToken});
-        }, this);
+        Backbone.sync("create", this, {url: this.url + '?_token=' + this.gdata.served.jwtToken});
     },
 
 
@@ -236,7 +234,7 @@ var MtParamModel = Backbone.Model.extend({
                 if (rowIndex < 0) {
                     mtlog.log('MtIntervalModel.recalculate: Bad row index ' + rowIndex);
                 } else {
-                    this.save(null, {url: this.collection.url + '/' + rowIndex});
+                    // this.save(null, {url: this.collection.url + '/' + rowIndex});
                 }
             }
         }
@@ -254,6 +252,7 @@ var MtParamCollection = Backbone.Collection.extend({
 
     initialize: function(models, options) {
         this.datasetId = options.datasetId;
+        this.gdata = options.gdata;
         this.mtId = options.mtId;
         this.url = '/apiv1/param/' + this.datasetId;
 
@@ -363,10 +362,9 @@ var MtParamCollection = Backbone.Collection.extend({
         return retVal;
     },
 
+
     saveAll: function() {
-        _.each(this.models, function(model, rowIndex) {
-            model.save(null, {url: this.url + '/' + rowIndex});
-        }, this);
+        Backbone.sync("create", this, {url: this.url + '?_token=' + this.gdata.served.jwtToken});
     },
 });
 

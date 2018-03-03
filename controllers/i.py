@@ -36,17 +36,23 @@ def yt():
     base_url = URL(args=request.args[:2])
 
     if session.auth:
-        fake_user_row = Storage(as_dict=lambda: dict(id=session.auth['user']['id']))
+        fake_user_row = Storage(as_dict=lambda: dict(id=session.auth['user']['id'], session_id=response.session_id))
         auth_session = dict(
             hmac_key=session.auth['hmac_key'],
             user_groups=session.auth['user_groups'],
             user=fake_user_row
         )
-        payload = auth.jwt_handler.serialize_auth_session(auth_session)
-        auth.jwt_handler.alter_payload(payload)
-        jwtToken = auth.jwt_handler.generate_token(payload)
     else:
-        jwtToken = ""
+        fake_user_row = Storage(as_dict=lambda: dict(id=0, session_id=response.session_id))
+        auth_session = dict(
+            hmac_key='',
+            user_groups=[],
+            user=fake_user_row
+        )
+
+    payload = auth.jwt_handler.serialize_auth_session(auth_session)
+    auth.jwt_handler.alter_payload(payload)
+    jwtToken = auth.jwt_handler.generate_token(payload)
 
     response.view = 'i/view.html'
 

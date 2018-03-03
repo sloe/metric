@@ -11,6 +11,9 @@ function MtIntervalTable () {
         this.containerName = 'intervaltable' + mtId;
         this.containerElem = document.getElementById(this.containerName);
 
+        this.addRowElems = $('.interval_bar_button_add_row');
+        this.removeRowElems = $('.interval_bar_button_remove_row');
+
         this.columnAttrs = [
             'start_time',
             'end_time',
@@ -68,7 +71,7 @@ function MtIntervalTable () {
             dataSchema: makeInterval,
             enterMoves: {col:0, row: 0},
             manualColumnResize: true,
-            minSpareRows: 1,
+            minSpareRows: 0,
             minSpareCols: 0,
             outsideClickDeselects : false,
             readOnly: this.gdata.served.readOnly,
@@ -90,6 +93,10 @@ function MtIntervalTable () {
         Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
         Backbone.Mediator.subscribe('mt:controlFinish', this.onMtControlFinish, this);
         Backbone.Mediator.subscribe('mt:setSelection', this.onMtSetSelection, this);
+
+
+        this.addRowElems.click(this.onClickAddRow.bind(this));
+        this.removeRowElems.click(this.onClickRemoveRow.bind(this));
     };
 
 
@@ -183,6 +190,32 @@ function MtIntervalTable () {
     };
 
 
+    this.onClickAddRow = function(event) {
+        var insertIndex = null;
+        var selection = this.hot.getSelected();
+        if (_.isUndefined(selection)) {
+            insertIndex = 0;
+        } else {
+            insertIndex = selection[0] + 1;
+        }
+        this.hot.alter('insert_row', insertIndex);
+        this.hot.render();
+    }
+
+
+    this.onClickRemoveRow = function(event) {
+        var activeRow = null;
+        var selection = this.hot.getSelected();
+        if (_.isUndefined(selection)) {
+            activeRow = 0;
+        } else {
+            activeRow = selection[0];
+        }
+        this.hot.alter('remove_row', activeRow);
+        this.hot.render();
+    }
+
+
     this.onMtCollectionValueChange = function(model, options) {
         mtlog.log('MtIntervalTable.onMtCollectionValueChange: ' + JSON.stringify(model) + JSON.stringify(options));
 
@@ -242,8 +275,6 @@ function MtIntervalTable () {
         }
     };
 };
-
-
 
 
 function MtParamTable () {

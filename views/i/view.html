@@ -4,6 +4,7 @@
 {{include 'metricytbase.html'}}
 {{include 'metriccontrolbase.html'}}
 {{include 'metricchartbase.html'}}
+{{include 'metrictablebase.html'}}
 
 
 <script type="text/javascript"><!--
@@ -51,12 +52,17 @@ pass
 
 
 <div id="intervaltable0"></div>
+{{
+write_mt_interval_table_bar(mode)
+}}
 <div id="chart0_rate"></div>
 <div id="paramtable0"></div>
 
+
 <script>
+
 var datasetId = {{=XML(dataset_id)}};
-var paramCollection = new MtParamCollection(null, {datasetId: datasetId, mtId: 0});
+var paramCollection = new MtParamCollection(null, {datasetId: datasetId, gdata: gdata, mtId: 0});
 var intervalCollection = new MtIntervalCollection(null, {datasetId: datasetId, gdata: gdata, mtId: 0, mtParamProvider: paramCollection});
 var intervalTable = new MtIntervalTable();
 var paramTable = new MtParamTable();

@@ -6,6 +6,7 @@ __flatnode_items = lambda: (
     Field('f_uuid', comment='Unique identifer', default=lambda: str(uuid.uuid4()), length=64, notnull=True, unique=True),
 )
 
+
 __treenode_items = lambda: (
     Field('f_parent_uuid', comment='Identifer of parent', length=64, notnull=False, unique=False),
     Field('f_uuid', comment='Unique identifer', default=lambda: str(uuid.uuid4()), length=64, notnull=True, unique=True)
@@ -19,6 +20,7 @@ db.define_table(
     *__flatnode_items()
 )
 
+
 db.define_table(
     't_mtalbum',
     Field('f_name', comment='Name of album'),
@@ -26,11 +28,13 @@ db.define_table(
     *__treenode_items()
 )
 
+
 db.define_table(
     't_mtitemtype',
     Field('f_name', comment='Name of type'),
     Field('f_key', comment='Type key, e.g. yt', unique=True)
 )
+
 
 db.define_table(
     't_mtitem',

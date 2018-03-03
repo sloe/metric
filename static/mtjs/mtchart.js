@@ -38,7 +38,7 @@ MtChart.prototype.create = function(gdata, mtId, intervalCollection) {
                     position: 'outer-middle'
                 },
                 tick: {
-                    format: d3.format('.0f')
+                    format: d3.format('.1f')
                 }
             }
         },
@@ -54,7 +54,7 @@ MtChart.prototype.create = function(gdata, mtId, intervalCollection) {
             selection: {
                 enabled: true
             },
-            type: 'spline'
+            type: 'line'
         },
         grid: {
             y: {

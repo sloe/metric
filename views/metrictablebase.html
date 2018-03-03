@@ -1,0 +1,18 @@
+<link rel="stylesheet" href="{{=URL('static','css/handsontable.full.css')}}"/>
+
+<script src="{{=URL('static', 'js/handsontable.full.js')}}"></script>
+
+<script src="{{=URL('static', 'mtjs/mttable.js')}}"></script>
+
+{{
+def write_mt_interval_table_bar(mode):
+    content = []
+    if mode == 'edit':
+        content.append(BUTTON("Add row", _class="control_bar_button control_bar_button_left interval_bar_button_add_row"))
+        content.append(BUTTON("Remove row", _class="control_bar_button control_bar_button_left interval_bar_button_remove_row"))
+    pass
+
+    response.write(DIV(content))
+
+    pass # Terminates function
+}}

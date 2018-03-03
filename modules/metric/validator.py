@@ -1,7 +1,24 @@
 
 import re
 
+from gluon import current
 from gluon.http import HTTP
+
+def has_data_row_access(auth, access_type, table, data_row):
+    if access_type == 'read':
+        return True
+    elif access_type == 'write':
+        if data_row.f_creator and auth.user and data_row.f_creator == auth.user.id:
+            # User is logged in and the creator of this object
+            return True
+        elif data_row.f_owner and auth.user_groups and data_row.f_owner in auth.user_groups.keys():
+            # User is logged in and is in the owning group of this object
+            return True
+        elif not data_row.f_creator and not data_row.f_owner and auth.user.session_id and data_row.f_session_id and auth.user.session_id == data_row.f_session_id:
+            return True
+        else:
+            return False
+
 
 #
 # /i/yt/bwgCRdwWGzE -> create new base user metric URL and redirect to it

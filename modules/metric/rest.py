@@ -15,15 +15,18 @@ LOGGER.setLevel(logging.DEBUG)
 
 def rest_get_handler(name, table, field_name, *args, **vars):
     errors = []
-    db, response = current.db, current.response
+    auth, db, response = current.auth, current.db, current.response
 
     row_id, array_index = metric.validator.row_id_array_index(args)
 
-    data_row = db(table.id == row_id).select(field_name).first()
+    data_row = db(table.id == row_id).select(field_name, 'f_creator', 'f_owner', 'f_session_id').first()
     if not data_row:
         http_400 = HTTP(400, "%s row id %d not found" % (name, row_id))
         LOGGER.warn(metric.diag.exception_context(http_400))
         raise http_400
+
+    if not metric.validator.has_data_row_access(auth, 'read', table, data_row):
+        raise HTTP(403, "Read access to %s row id %d disallowed" % (name, row_id))
 
     data_json = getattr(data_row, field_name)
     if isinstance(data_json, types.StringTypes):
@@ -53,14 +56,17 @@ def rest_get_handler(name, table, field_name, *args, **vars):
 
 
 def rest_post_put_handler(post_or_put, name, table, field_name, *args, **vars):
-    db, response = current.db, current.response
+    auth, db, response = current.auth, current.db, current.response
     request_body = current.request.body.read()
 
     row_id, array_index = metric.validator.row_id_array_index(args)
 
-    data_row = db(table.id == row_id).select(field_name, for_update=True).first()
+    data_row = db(table.id == row_id).select(field_name, 'f_creator', 'f_owner', 'f_session_id', for_update=True).first()
     if not data_row:
         raise HTTP(400, "%s row id %d not found" % (name, row_id))
+
+    if not metric.validator.has_data_row_access(auth, 'write', table, data_row):
+        raise HTTP(403, "Write access to %s row id %d disallowed" % (name, row_id))
 
     data_json = getattr(data_row, field_name)
     if isinstance(data_json, types.StringTypes):
@@ -70,10 +76,6 @@ def rest_post_put_handler(post_or_put, name, table, field_name, *args, **vars):
     if data_array is None:
         LOGGER.warn("%s: %s", metric.diag.request_context(), 'Missing d element - creating')
         data_array = []
-        data_json['d'] = data_array
-
-    if array_index is None:
-        raise HTTP(400, "Array index must be specified")
 
     try:
         post_data = json.loads(request_body)
@@ -81,7 +83,9 @@ def rest_post_put_handler(post_or_put, name, table, field_name, *args, **vars):
         LOGGER.warn("%s: %s", metric.diag.request_context(), e)
         raise HTTP(400, "Invalid JSON")
 
-    if array_index >= len(data_array):
+    if array_index is None:
+        data_array = post_data
+    elif array_index >= len(data_array):
         # This is a new row
         for i in range(1, array_index - len(data_array)):
             # Pad the array if necessary, to reach the new index
@@ -91,6 +95,7 @@ def rest_post_put_handler(post_or_put, name, table, field_name, *args, **vars):
         # This updates a current row in the JSON array
         data_array[array_index] = post_data
 
+    data_json['d'] = data_array
     new_data_json_str = json.dumps(data_json, indent=2)
 
     result = db(table.id == row_id).validate_and_update(**{field_name: new_data_json_str})
