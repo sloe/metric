@@ -84,7 +84,7 @@ response.form_label_separator = myconf.get('forms.separator') or ''
 from gluon.tools import Auth, Service, PluginManager
 
 # host names must be a list of allowed host names (glob syntax allowed)
-auth = Auth(db, host_names=myconf.get('host.names'))
+auth = Auth(db, host_names=myconf.get('host.names'), jwt={'allow_refresh': False, 'secret_key': myconf.get('jwt.secret')})
 service = Service()
 plugins = PluginManager()
 

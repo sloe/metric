@@ -27,7 +27,9 @@ def get_dataset(dataset_type, dataset_id):
 
 
 def requester_has_ownership(dataset_row):
-    if current.auth.user and dataset_row.f_creator and dataset_row.f_creator == current.auth.user.id:
+    if not dataset_row:
+        return False
+    elif current.auth.user and dataset_row.f_creator and dataset_row.f_creator == current.auth.user.id:
         return 'creator'
     elif current.auth.user and dataset_row.f_owner and dataset_row.f_owner in current.auth.user_groups:
         return 'owner'

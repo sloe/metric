@@ -11,6 +11,9 @@
 var gdata = new MtGlobal();
 gdata.create("{{=gdata_served_jb64}}");
 
+var stateManager = new MtStateManager();
+stateManager.create(gdata, 0);
+
 player = new MtYouTubePlayer();
 function onYouTubeIframeAPIReady() {
     player.create(0, '{{=item_row.f_alien_key}}', true);
@@ -22,7 +25,7 @@ function onYouTubeIframeAPIReady() {
 <script>
     controlbar = new MtControlBar();
     $(function () {
-        controlbar.create("{{=base_url}}");
+        controlbar.create(gdata, null, stateManager);
     });
 </script>
 
@@ -54,7 +57,7 @@ pass
 <script>
 var datasetId = {{=XML(dataset_id)}};
 var paramCollection = new MtParamCollection(null, {datasetId: datasetId, mtId: 0});
-var intervalCollection = new MtIntervalCollection(null, {datasetId: datasetId, mtId: 0, mtParamProvider: paramCollection});
+var intervalCollection = new MtIntervalCollection(null, {datasetId: datasetId, gdata: gdata, mtId: 0, mtParamProvider: paramCollection});
 var intervalTable = new MtIntervalTable();
 var paramTable = new MtParamTable();
 var chartRate = new MtChart();
@@ -63,6 +66,9 @@ $(function () {
     paramTable.create(0, paramCollection);
     intervalTable.create(gdata, 0, intervalCollection);
     chartRate.create(gdata, 0, intervalCollection);
+    stateManager.addSaveable(intervalCollection);
+    stateManager.addSaveable(paramCollection);
+
     var loadIntervalJob = intervalCollection.loadInitial();
     var loadParamJob = paramCollection.loadInitial();
     $.when(loadIntervalJob, loadParamJob).done(function () {

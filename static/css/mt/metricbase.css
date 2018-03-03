@@ -1,6 +1,10 @@
 
+.control_bar_button_left {
+    margin-bottom: 4px;
+}
+
 .control_bar_button_right {
-    float:right;
+    float: right;
 }
 
 .mt_control_heading {

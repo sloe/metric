@@ -7,7 +7,11 @@ import metric.item
 import metric.url
 import metric.validator
 
+import gluon.serializers as serializers
+
+@auth.requires(True, requires_login=False)
 def yt():
+    session.test = 'hello'
     alien_key, dataset_id, mode = metric.validator.item_yt_args(request.args)
     if not alien_key:
         alien_key = 'bwgCRdwWGzE';
@@ -31,15 +35,30 @@ def yt():
 
     base_url = URL(args=request.args[:2])
 
+    if session.auth:
+        fake_user_row = Storage(as_dict=lambda: dict(id=session.auth['user']['id']))
+        auth_session = dict(
+            hmac_key=session.auth['hmac_key'],
+            user_groups=session.auth['user_groups'],
+            user=fake_user_row
+        )
+        payload = auth.jwt_handler.serialize_auth_session(auth_session)
+        auth.jwt_handler.alter_payload(payload)
+        jwtToken = auth.jwt_handler.generate_token(payload)
+    else:
+        jwtToken = ""
+
     response.view = 'i/view.html'
 
     gdata_served = Storage()
-    gdata_served.readonly = (mode != 'edit')
+
+    gdata_served.baseUrl = base_url
+    gdata_served.jwtToken = jwtToken;
+    gdata_served.readOnly = (mode != 'edit')
     gdata_served_json = json.dumps(gdata_served, separators=(',', ':'))
     gdata_served_jb64 = base64.b64encode(gdata_served_json)
 
     return dict(
-        base_url=base_url,
         dataset_id=dataset_id,
         gdata_served_jb64=gdata_served_jb64,
         item_row=item_row,

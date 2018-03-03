@@ -17,7 +17,7 @@ function MtIntervalTable () {
             'interval',
             'num_events',
             'rate',
-            'link_end_to_start',
+            'break_before_next',
             'notes'
         ];
 
@@ -27,7 +27,7 @@ function MtIntervalTable () {
             'Interval',
             'Number',
             'Rate',
-            'Link',
+            'Break',
             'Notes'
         ];
 
@@ -60,7 +60,7 @@ function MtIntervalTable () {
                 columnFn('interval', 'numeric', '0,0.000'),
                 columnFn('num_events', 'numeric', '0,0.0'),
                 columnFn('rate', 'numeric', '0,0.000'),
-                columnFn('link_end_to_start', 'checkbox', null),
+                columnFn('break_before_next', 'checkbox', null),
                 columnFn('notes', null, null)
             ],
             contextMenu: true,
@@ -68,11 +68,12 @@ function MtIntervalTable () {
             dataSchema: makeInterval,
             enterMoves: {col:0, row: 0},
             manualColumnResize: true,
-            minSpareRows: 0,
+            minSpareRows: 1,
             minSpareCols: 0,
             outsideClickDeselects : false,
-            readOnly: this.gdata.served.readonly,
-            rowHeaders: true
+            readOnly: this.gdata.served.readOnly,
+            rowHeaders: true,
+            undo: true
         });
 
         // Handsontable will try to walk the datasource to derive the number of columns,
@@ -206,6 +207,7 @@ function MtIntervalTable () {
         }
     };
 
+
     this.onMtControlFinish = function(event) {
         mtlog.log('MtIntervalTable.onMtControlFinish: ' + JSON.stringify(event));
 
@@ -284,7 +286,8 @@ function MtParamTable () {
             manualColumnResize: true,
             minSpareRows: 0,
             minSpareCols: 0,
-            outsideClickDeselects : true
+            outsideClickDeselects : true,
+            undo: true
         });
 
         // Handsontable will try to walk the datasource to derive the number of columns,

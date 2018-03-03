@@ -10,17 +10,20 @@
 
 {{
 def write_mt_control_bar(mode):
+    content = []
     if mode == 'edit':
-        response.write(BUTTON("Save", _class="control_bar_button control_bar_button_right control_bar_button_save"))
-        response.write(BUTTON("Discard Changes", _class="control_bar_button control_bar_button_right control_bar_button_discard"))
+        content.append(BUTTON("Save", _class="control_bar_button control_bar_button_left control_bar_button_save"))
+        content.append(BUTTON("Discard Changes", _class="control_bar_button control_bar_button_left control_bar_button_discard"))
     elif mode == 'view':
-        response.write(BUTTON("Duplicate and Edit", _class="control_bar_button control_bar_button_right control_bar_button_duplicate"))
+        content.append(BUTTON("Duplicate and Edit", _class="control_bar_button control_bar_button_left control_bar_button_duplicate"))
         if requester_can_write:
-            response.write(BUTTON("Edit", _class="control_bar_button control_bar_button_right control_bar_button_edit"))
+            content.append(BUTTON("Edit", _class="control_bar_button control_bar_button_left control_bar_button_edit"))
         pass
     else:
-        response.write("Improper mode, please reload")
+        content.append("Improper mode, please reload")
     pass
+
+    response.write(DIV(content))
 
     pass # Terminates function
 

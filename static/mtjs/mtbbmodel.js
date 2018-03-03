@@ -25,14 +25,14 @@ var MtIntervalModel = Backbone.Model.extend({
             this.set({end_time: newEndTime}, options);
         }
 
-        if (attr.link_end_to_start !== true && attr.link_end_to_start !== false) {
-            attr.link_end_to_start = false;
+        if (attr.break_before_next !== true && attr.break_before_next !== false) {
+            attr.break_before_next = false;
         }
 
         var rowIndex = this.collection.indexOf(this);
 
-        if (attr.link_end_to_start && rowIndex + 1 < this.collection.length &&
-            (options.originator === 'link_end_to_start' || !_.isUndefined(this.changed.end_time))) {
+        if (!attr.break_before_next && rowIndex + 1 < this.collection.length &&
+            (options.originator === 'break_before_next' || !_.isUndefined(this.changed.end_time))) {
             var nextModel = this.collection.at(rowIndex + 1);
             var nextOptions = jQuery.extend({}, options);
             nextOptions.row = rowIndex + 1;
@@ -41,7 +41,7 @@ var MtIntervalModel = Backbone.Model.extend({
 
         if (!_.isUndefined(this.changed.start_time) && rowIndex > 0) {
             var previousModel = this.collection.at(rowIndex - 1);
-            if (previousModel.attributes.link_end_to_start) {
+            if (!previousModel.attributes.break_before_next) {
                 var previousOptions = jQuery.extend({}, options);
                 previousOptions.row = rowIndex - 1;
                 previousModel.set({end_time: attr.start_time}, previousOptions);
@@ -53,7 +53,7 @@ var MtIntervalModel = Backbone.Model.extend({
                 if (rowIndex < 0) {
                     mtlog.log('MtIntervalModel.recalculate: Bad row index ' + rowIndex);
                 } else {
-                    this.save(null, {url: this.collection.url + '/' + rowIndex});
+                    // this.save(null, {url: this.collection.url + '/' + rowIndex});
                 }
             }
         }
@@ -70,6 +70,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
     initialize: function(models, options) {
         this.datasetId = options.datasetId;
+        this.gdata = options.gdata;
         this.mtId = options.mtId;
         this.mtParamProvider = options.mtParamProvider;
         this.url = '/apiv1/interval/' + this.datasetId;
@@ -121,7 +122,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
     saveAll: function() {
         _.each(this.models, function(model, rowIndex) {
-            model.save(null, {url: this.url + '/' + rowIndex});
+            model.save(null, {url: this.url + '/' + rowIndex + '?_token=' + this.gdata.served.jwtToken});
         }, this);
     },
 
@@ -151,7 +152,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
                         end_time: sourceAttr.start_time,
                         interval: sourceAttr.interval,
                         num_events: sourceAttr.num_events,
-                        link_end_to_start: sourceAttr.link_end_to_start
+                        break_before_next: sourceAttr.break_before_next
                     }, {originator: 'add_row'});
                 }
             } else if (!_.isUndefined(rowIndex)) {
@@ -163,7 +164,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
                     end_time: parseFloat(sourceAttr.end_time) + parseFloat(sourceAttr.interval),
                     interval: sourceAttr.interval,
                     num_events: sourceAttr.num_events,
-                    link_end_to_start: sourceAttr.link_end_to_start
+                    break_before_next: sourceAttr.break_before_next
                 }, {originator: 'add_row'});
             }
         }
@@ -360,5 +361,32 @@ var MtParamCollection = Backbone.Collection.extend({
         }
         mtlog.debug(message);
         return retVal;
-    }
+    },
+
+    saveAll: function() {
+        _.each(this.models, function(model, rowIndex) {
+            model.save(null, {url: this.url + '/' + rowIndex});
+        }, this);
+    },
 });
+
+
+function MtStateManager() {};
+
+MtStateManager.prototype.create = function(gdata, mtId) {
+    this.gdata = gdata;
+    this.mtId = mtId;
+    this.saveables = [];
+};
+
+
+MtStateManager.prototype.addSaveable = function(saveable) {
+    this.saveables.push(saveable);
+};
+
+
+MtStateManager.prototype.saveAll = function(options) {
+    _.each(this.saveables, function(saveable) {
+        saveable.saveAll(options);
+    }, this);
+};
