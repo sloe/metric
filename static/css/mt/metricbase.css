@@ -7,6 +7,13 @@
     float: right;
 }
 
+.interval_bar_button_left {
+    margin-left: 0px;
+    margin-right: 4px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
 .mt_control_heading {
     font-size: 20px;
 }

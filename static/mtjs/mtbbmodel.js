@@ -3,58 +3,97 @@
 
 var MtIntervalModel = Backbone.Model.extend({
     recalculate: function(options) {
+        if (options.noRecalculate) {
+            return;
+        }
         var attr = this.attributes;
         var paramProvider = this.collection.mtParamProvider;
         var speedFactor = paramProvider.getParam('speed_factor');
 
-        if (options.originator === 'speed_factor' || options.originator === 'fetch' || (options.originator !== 'rate' && _.isUndefined(this.changed.rate))) {
-            // num_events or speed_factor was changed by the user so recaculate the rate based on it
-            var newRate = (attr.num_events * speedFactor * 60) / (attr.end_time - attr.start_time);
-            this.set({rate: newRate}, options);
-        } else if (options.originator === 'rate' && _.isUndefined(this.changed.num_events)) {
-            // rate was changed by the user so recaculate the number of events based on it
-            var newNumEvents = Math.round((attr.end_time - attr.start_time) * attr.rate / (60 * speedFactor));
-            this.set({num_events: newNumEvents}, options);
+        // If recalculation changes values we set them in the normal Backbone way, but we don't that set operation
+        // to cause another recalculation.  We do want changes to cascade so that e.g. a change we make to end time
+        // results in a change in rate, but we achienve that only by continuing through the function
+        var optionsNoRecalculate = jQuery.extend({}, options);
+        optionsNoRecalculate.noRecalculate = true;
+
+        // Set default values for invalid elements
+        if (!_.isFinite(parseFloat(attr.start_time))) {
+            this.set({start_time: 0}, optionsNoRecalculate);
+        }
+        if (!_.isFinite(parseFloat(attr.end_time))) {
+            this.set({end_time: 0}, optionsNoRecalculate);
+        }
+        if (!_.isFinite(parseFloat(attr.num_events))) {
+            this.set({num_events: 1}, optionsNoRecalculate);
         }
 
-        if (options.originator === 'fetch' || (options.originator !== 'interval' && _.isUndefined(this.changed.interval))) {
+        if (!options.ongoing && // Don't force end time >= start time during ongoing slider drags
+            parseFloat(attr.end_time) < parseFloat(attr.start_time)) { // but if end time < start time
+            // Don't allow end time to be before start time
+            if (_.isUndefined(this.changed.end_time)) { // If end time isn't what's being dragged
+                // Move end time to start time
+                this.set({end_time: attr.start_time}, optionsNoRecalculate);
+            } else {
+                // Move start time to end time
+                this.set({start_time: attr.end_time}, optionsNoRecalculate);
+            }
+        }
+
+        if (options.originator === 'rate' && _.isUndefined(this.changed.num_events)) {
+            // Old method: rate was changed by the user so recalculate the number of events based on it
+            // Old method: var newNumEvents = Math.max(1, Math.round((attr.end_time - attr.start_time) * attr.rate / (60 * speedFactor)));
+            var newEndTime = attr.start_time + attr.num_events * (60.0 / attr.rate);
+            this.set({end_time: newEndTime}, optionsNoRecalculate);
+        }
+
+        if (!(options.ongoing && options.originator === 'rate')) { // Unless user is dragging the rate
+            // Recalculate rate
+            var newRate = (attr.num_events * speedFactor * 60) / (attr.end_time - attr.start_time);
+            this.set({rate: newRate}, optionsNoRecalculate);
+        }
+
+        if (options.originator === 'fetch' || // Recalculate interval after fetch to ensure self-consistency, or
+            (options.originator !== 'interval' && _.isUndefined(this.changed.interval)) // recalculate unless interval has been changed by the user
+            ) {
             var newInterval = parseFloat(attr.end_time) - parseFloat(attr.start_time);
-            this.set({interval: newInterval}, options);
-        } else if (options.originator === 'interval' && _.isUndefined(this.changed.start_time) && _.isUndefined(this.changed.end_time)) {
-            var newEndTime = parseFloat(attr.start_time,) + parseFloat(attr.interval);
-            this.set({end_time: newEndTime}, options);
+            this.set({interval: newInterval}, optionsNoRecalculate);
+        } else if (options.originator === 'interval' && // User has changed the interval directly, and
+            _.isUndefined(this.changed.start_time) && _.isUndefined(this.changed.end_time) // start and end times have not been changed
+            ) {
+            // Set the end time to the start time plus the new interval
+            var newEndTime = parseFloat(attr.start_time) + parseFloat(attr.interval);
+            this.set({end_time: newEndTime}, optionsNoRecalculate);
         }
 
         if (attr.break_before_next !== true && attr.break_before_next !== false) {
+            // If break before next is not what we expect, assume no break
             attr.break_before_next = false;
         }
 
         var rowIndex = this.collection.indexOf(this);
 
-        if (!attr.break_before_next && rowIndex + 1 < this.collection.length &&
-            (options.originator === 'break_before_next' || !_.isUndefined(this.changed.end_time))) {
+        if (!attr.break_before_next && // No break before next, and
+            rowIndex + 1 < this.collection.length && // there is a line after this one, and
+            (options.originator === 'break_before_next' || // user has clicked the break before next checkbox, or
+            !_.isUndefined(this.changed.end_time)) // end time HAS been changed by the user
+            ) {
+            // Set next model start time to this model end time
             var nextModel = this.collection.at(rowIndex + 1);
-            var nextOptions = jQuery.extend({}, options);
+            var nextOptions = jQuery.extend({}, optionsNoRecalculate); // Duplicate so we don't modify the original
             nextOptions.row = rowIndex + 1;
             nextModel.set({start_time: attr.end_time}, nextOptions);
         }
 
-        if (!_.isUndefined(this.changed.start_time) && rowIndex > 0) {
+        if (!_.isUndefined(this.changed.start_time) && // Start time has been changed by the user, and
+            rowIndex > 0 // this is not the first row
+            ) {
             var previousModel = this.collection.at(rowIndex - 1);
-            if (!previousModel.attributes.break_before_next) {
-                var previousOptions = jQuery.extend({}, options);
+            if (!previousModel.attributes.break_before_next // Previous model has break before next unset
+                ) {
+                // Set next model end time to this model start time
+                var previousOptions = jQuery.extend({}, optionsNoRecalculate); // Duplicate so we don't modify the original
                 previousOptions.row = rowIndex - 1;
                 previousModel.set({end_time: attr.start_time}, previousOptions);
-            }
-        }
-
-        if (options.originator !== 'fetch' && (_.isUndefined(options.ongoing) || !options.ongoing)) {
-            if (!_.isUndefined(rowIndex)) {
-                if (rowIndex < 0) {
-                    mtlog.log('MtIntervalModel.recalculate: Bad row index ' + rowIndex);
-                } else {
-                    // this.save(null, {url: this.collection.url + '/' + rowIndex});
-                }
             }
         }
     }

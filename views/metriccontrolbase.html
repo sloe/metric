@@ -9,6 +9,22 @@
 <script src="{{=URL('static', 'mtjs/mtcontrolbar.js')}}"></script>
 
 {{
+
+
+def mt_control_title(property_name, heading, subheading):
+    content = [
+        DIV("%s " % heading, _class="mt_control_heading"),
+        DIV(subheading, _class="mt_control_subheading")
+    ]
+
+    return SPAN(*content, _class="mt_control_banner mt_control_banner_%s" % property_name)
+
+
+def write_mt_control_title(property_name, heading, subheading):
+    response.write(mt_control_title(property_name, heading, subheading))
+    pass
+
+
 def write_mt_control_bar(mode):
     content = []
     if mode == 'edit':
@@ -32,14 +48,7 @@ def write_mt_control_interval(id):
     style = "width:640px;"
     parent_style = "border: solid; border-color: #fff;"
 
-    def __control_title(property_name, heading, subheading):
-        prefix = "slider%d_%s" % (id, property_name)
-        content = [
-            DIV("%s " % heading, _class="mt_control_heading %s_mt_control_heading" % prefix, _id='%s_heading' % prefix),
-            DIV(subheading, _class="mt_control_subheading %s_mt_control_subheading" % prefix, _id='%s_subheading' % prefix)
-        ]
 
-        return SPAN(*content, _class="mt_control_banner %s_mt_control_banner" % prefix, _id='%s_banner' % prefix)
 
     def __single_control(property_name):
         prefix = "slider%d_%s" % (id, property_name)
@@ -50,13 +59,13 @@ def write_mt_control_interval(id):
         return content
 
     response.write(TABLE(
-        TR(TD(__control_title('start_time', 'Start time', 'Adjust to show blades halfway into the water at the catch, using the coarse and fine adjusters'))),
+        TR(TD(mt_control_title('start_time', 'Start time', 'Adjust to show blades halfway into the water at the catch, using the coarse and fine adjusters'))),
         TR(TD(__single_control('start_time'))),
-        TR(TD(__control_title('end_time', 'End time', 'Adjust to show blades halfway into the water for a subsequent stroke'))),
+        TR(TD(mt_control_title('end_time', 'End time', 'Adjust to show blades halfway into the water for a subsequent stroke'))),
         TR(TD(__single_control('end_time'))),
-        TR(TD(__control_title('num_events', 'Number of strokes', 'Adjust to the number of strokes between the start and end times above'))),
+        TR(TD(mt_control_title('num_events', 'Number of strokes', 'Adjust to the number of strokes between the start and end times above'))),
         TR(TD(__single_control('num_events'))),
-        TR(TD(__control_title('rate', 'Rate', 'This will calculate itself, or you can drag it to the estimated rate to guess the number of strokes'))),
+        TR(TD(mt_control_title('rate', 'Rate', 'This will calculate itself, or you can drag it to change the end time to match the rate'))),
         TR(TD(__single_control('rate')))
     ))
     pass

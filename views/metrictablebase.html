@@ -8,8 +8,8 @@
 def write_mt_interval_table_bar(mode):
     content = []
     if mode == 'edit':
-        content.append(BUTTON("Add row", _class="control_bar_button control_bar_button_left interval_bar_button_add_row"))
-        content.append(BUTTON("Remove row", _class="control_bar_button control_bar_button_left interval_bar_button_remove_row"))
+        content.append(BUTTON("Add row", _class="interval_bar_button_left interval_bar_button_add_row"))
+        content.append(BUTTON("Remove row", _class="interval_bar_button_left interval_bar_button_remove_row"))
     pass
 
     response.write(DIV(content))

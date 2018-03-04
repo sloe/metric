@@ -50,12 +50,21 @@ pass
 }}
 
 
-
+{{
+write_mt_control_title('interval_table', 'Intervals', 'Each row calculates the rate for one time interval, supporting copy, paste and right-click.  '
+    'You can build up one row per stroke, or rows for groups of strokes.')
+}}
 <div id="intervaltable0"></div>
 {{
 write_mt_interval_table_bar(mode)
 }}
+{{
+write_mt_control_title('chart', 'Rate chart', 'A graph of stroke rate over time')
+}}
 <div id="chart0_rate"></div>
+{{
+write_mt_control_title('param_table', 'Parameters', 'Values for this particular video')
+}}
 <div id="paramtable0"></div>
 
 
