@@ -4,11 +4,12 @@ response.meta.author = '%(author)s <%(author_email)s>' % settings
 response.meta.keywords = settings.keywords
 response.meta.description = settings.description
 response.menu = [
-    (T('Index'),URL('default','index')==URL(),URL('default','index'),[]),
+    (T('Home'), URL('default','index') == URL(), URL('default','index'), []),
+    (T('My Videos'), URL('my','videos') == URL(), URL('my','videos'), []),
     (T("Item"), False, None, [
         (T("View"), False, URL("i", "yt"), [])
     ]),
-    (T('Privacy Policy'),URL('default','privacy')==URL(),URL('default','privacy'),[])
+    (T('Privacy Policy'), URL('default','privacy') == URL(), URL('default','privacy'),[])
 ]
 
 if auth.has_membership('admin'):

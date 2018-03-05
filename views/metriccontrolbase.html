@@ -31,10 +31,10 @@ def write_mt_control_bar(mode):
         content.append(BUTTON("Save", _class="control_bar_button control_bar_button_left control_bar_button_save"))
         content.append(BUTTON("Discard Changes", _class="control_bar_button control_bar_button_left control_bar_button_discard"))
     elif mode == 'view':
-        content.append(BUTTON("Duplicate and Edit", _class="control_bar_button control_bar_button_left control_bar_button_duplicate"))
         if requester_can_write:
             content.append(BUTTON("Edit", _class="control_bar_button control_bar_button_left control_bar_button_edit"))
         pass
+        content.append(BUTTON("Duplicate and Edit", _class="control_bar_button control_bar_button_left control_bar_button_duplicate"))
     else:
         content.append("Improper mode, please reload")
     pass
