@@ -40,7 +40,9 @@ db.define_table(
     't_mtitem',
     Field('f_name', comment='Name of item'),
     Field('f_album', 'reference t_mtalbum', comment='Album containing this item', requires=IS_IN_DB(db, 't_mtalbum.id', '%(f_name)s', zero=None)),
+    Field('f_alien_etag', 'string', comment='Etag to manage refetch of data', default=None, length=64),
     Field('f_alien_key', 'string', comment='Identifier within the source, e.g. bwgCRdwWGzE for YouTube', length=256),
+    Field('f_alien_last_fetch_timestamp', 'datetime', comment='Time that parameteres were last fetched from the alien', default=None),
     Field('f_alien_params', 'json', comment='Parameters from the alien service, e.g. YouTube', default='{}', notnull=True),
     Field('f_itemtype', 'reference t_mtitemtype', comment='Item type', requires=IS_IN_DB(db, 't_mtitemtype.id', '%(f_name)s (%(f_key)s)', zero=None)),
     *__treenode_items()

@@ -72,3 +72,12 @@ def row_id_array_index(request_args):
     return row_id, array_index
 
 
+def ytinfo_args(request_args):
+    if len(request_args) < 1:
+        raise HTTP(400, 'YouTube video id')
+    else:
+        alien_key = request_args[0];
+        if not re.match(r'[-_0-9A-Za-z]{6,64}$', alien_key):
+            raise HTTP(400, 'Malformed YouTube video id in URL')
+
+    return alien_key

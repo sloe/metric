@@ -94,6 +94,12 @@ $(function () {
 
 </script>
 
-End.
+{{
+write_mt_control_title('ytinfo', 'YouTube data', 'Information retrieved via the YouTube Data API')
+}}
+{{=LOAD('apiv1', 'ytinfo', args=[alien_key])}}
 
+{{=HR()}}
+End.
+{{=HR()}}
 

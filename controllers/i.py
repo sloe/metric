@@ -65,6 +65,7 @@ def yt():
     gdata_served_jb64 = base64.b64encode(gdata_served_json)
 
     return dict(
+        alien_key=alien_key,
         dataset_id=dataset_id,
         gdata_served_jb64=gdata_served_jb64,
         item_row=item_row,

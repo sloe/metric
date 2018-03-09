@@ -143,6 +143,7 @@ auth.settings.login_form = AuthFormRouter()
 
 from gluon import current
 current.auth = auth
+current.myconf = myconf
 
 # -------------------------------------------------------------------------
 # Define your tables below (or better in another model file) for example
