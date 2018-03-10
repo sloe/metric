@@ -338,15 +338,27 @@ MtYouTubeHandler.prototype.publishParamChange = function(params, options) {
 MtYouTubeHandler.prototype.handleYtInfo = function(ytInfo) {
     mtlog.warn(ytInfo);
 
-    var params = [{
-        property: 'video_description',
-        value: ytInfo.snippet.description
-    }, {
-        property: 'video_title',
-        value: ytInfo.snippet.title
-    }];
+    var params = [
+        {property: 'video_description', overwrite: true, value: ytInfo.snippet.description},
+        {property: 'video_title', overwrite: true, value: ytInfo.snippet.title}
+    ];
+
+    if (ytInfo.statistics) {
+        params = params.concat([{property: 'view_count', overwrite: true, value: ytInfo.statistics.viewCount}]);
+    }
+
+    if (ytInfo.status) {
+        params = params.concat([
+            {property: 'embeddable', overwrite: true, value: ytInfo.status.embeddable},
+            {property: 'license', overwrite: true, value: ytInfo.status.license},
+            {property: 'privacy_status', overwrite: false, value: ytInfo.status.privacyStatus},
+            {property: 'upload_status', overwrite: true, value: ytInfo.status.uploadStatus}
+        ]);
+    }
 
     var options = {};
 
     this.publishParamChange(params, options);
+
+
 };

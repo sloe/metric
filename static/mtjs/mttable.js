@@ -290,7 +290,25 @@ function MtParamTable () {
             return new MtParamModel();
         };
 
-        function columnFn(name) {
+        function paramRenderer(instance, td, row, col, prop, value, cellProperties) {
+            Handsontable.renderers.BaseRenderer.apply(this, arguments);
+            if (prop() === 'value') {
+                var model = this.paramCollection.models[row];
+                if (_.isUndefined(model)) {
+                    mtlog.warn('Undefined model index ' + row);
+                } else if (model.attributes.dropdownOptions) {
+                    cellProperties.source = model.attributes.dropdownOptions;
+                    cellProperties.filter = false;
+                    cellProperties.strict = true;
+                    cellProperties.type = 'dropdown';
+                    cellProperties.validator = 'autocomplete';
+                    return Handsontable.renderers.DropdownRenderer.apply(this, arguments);
+                }
+            }
+            return Handsontable.renderers.TextRenderer.apply(this, arguments);
+        };
+
+        function columnFn(that, name) {
             return {
                 data: function (param, value) {
                     if (_.isUndefined(param)) {
@@ -301,14 +319,15 @@ function MtParamTable () {
                         param.set(name, value, {source: 'table'});
                     }
                 },
+                renderer: paramRenderer.bind(that)
             };
         };
 
         this.hot = new Handsontable(this.containerElem, {
             colHeaders: ['Parameter', 'Value'],
             columns: [
-                columnFn('displayName'),
-                columnFn('value')
+                columnFn(this, 'displayName'),
+                columnFn(this, 'value')
             ],
             contextMenu: true,
             data: this.paramCollection,

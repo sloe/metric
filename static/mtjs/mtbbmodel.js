@@ -299,10 +299,15 @@ var MtParamCollection = Backbone.Collection.extend({
         this.propertyDefs = {
             speed_factor: { displayName: 'Speed factor', order: 100, value: 1.0},
             video_duration: { displayName: 'Video duration', order: 200, value: null},
-            video_title: { displayName: 'Video title', order: 300, value: "Not determined"},
-            video_description: { displayName: 'Video description', order: 350, value: "Not determined"},
-            min_rate_per_min: { displayName: 'Minimum rate supported', order: 400, value: 10.0},
-            max_rate_per_min: { displayName: 'Maximum rate supported', order: 500, value: 60.0}
+            privacy_status: { displayName: 'Privacy status', dropdownOptions: ['public', 'unlisted', 'private'], order: 300, value: null},
+            upload_status: { displayName: 'Upload status', order: 400, value: null},
+            license: { displayName: 'Licence', order: 500, value: null},
+            embeddable: { displayName: 'Embeddable', order: 600, value: null},
+            view_count: { displayName: 'View count', order: 700, value: null},
+            video_title: { displayName: 'Video title', order: 800, value: "Not determined"},
+            video_description: { displayName: 'Video description', order: 900, value: "Not determined"},
+            min_rate_per_min: { displayName: 'Minimum rate supported', order: 1000, value: 10.0},
+            max_rate_per_min: { displayName: 'Maximum rate supported', order: 1100, value: 60.0}
         };
 
         this.on('change', this.onChange, this);
@@ -315,13 +320,11 @@ var MtParamCollection = Backbone.Collection.extend({
     addParam: function(propertyName, value) {
         var propertyModel = this.findWhere({param: propertyName});
         if (_.isUndefined(propertyModel)) {
-            var property = this.propertyDefs[propertyName]
-            var addParams = {
-                displayName: property.displayName,
-                order: property.order,
+            var propertyDef = this.propertyDefs[propertyName]
+            var addParams = _.extend(propertyDef, {
                 param: propertyName,
                 value: value
-            };
+            });
             this.add(addParams);
         } else {
             mtlog.error('MtParamCollection.addParam double add for' + propertyName);
