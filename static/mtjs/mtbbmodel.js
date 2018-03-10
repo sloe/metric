@@ -282,6 +282,7 @@ var MtParamModel = Backbone.Model.extend({
 
 
 var MtParamCollection = Backbone.Collection.extend({
+    comparator: 'order',
     model: MtParamModel,
     parse: function(response) {
         return response.param;
@@ -295,6 +296,15 @@ var MtParamCollection = Backbone.Collection.extend({
         this.mtId = options.mtId;
         this.url = '/apiv1/param/' + this.datasetId;
 
+        this.propertyDefs = {
+            speed_factor: { displayName: 'Speed factor', order: 100, value: 1.0},
+            video_duration: { displayName: 'Video duration', order: 200, value: null},
+            video_title: { displayName: 'Video title', order: 300, value: "Not determined"},
+            video_description: { displayName: 'Video description', order: 350, value: "Not determined"},
+            min_rate_per_min: { displayName: 'Minimum rate supported', order: 400, value: 10.0},
+            max_rate_per_min: { displayName: 'Maximum rate supported', order: 500, value: 60.0}
+        };
+
         this.on('change', this.onChange, this);
         this.on('update', this.onUpdate, this);
 
@@ -302,13 +312,27 @@ var MtParamCollection = Backbone.Collection.extend({
     },
 
 
+    addParam: function(propertyName, value) {
+        var propertyModel = this.findWhere({param: propertyName});
+        if (_.isUndefined(propertyModel)) {
+            var property = this.propertyDefs[propertyName]
+            var addParams = {
+                displayName: property.displayName,
+                order: property.order,
+                param: propertyName,
+                value: value
+            };
+            this.add(addParams);
+        } else {
+            mtlog.error('MtParamCollection.addParam double add for' + propertyName);
+        }
+    },
+
+
     makeDefault: function() {
-        this.add([
-            {param: 'speed_factor', displayName: 'Speed factor', value: 1.0},
-            {param: 'video_duration', displayName: 'Video duration', value: null},
-            {param: 'min_rate_per_min', displayName: 'Minimum rate supported', value: 10.0},
-            {param: 'max_rate_per_min', displayName: 'Maximum rate supported', value: 60.0}
-        ]);
+        _.each(this.propertyDefs, function(v, k) {
+            this.addParam(k, v.value);
+        }, this);
     },
 
 
@@ -373,11 +397,11 @@ var MtParamCollection = Backbone.Collection.extend({
     onMtParamChangedValue: function(event) {
         mtlog.log('MtParamCollection.onMtParamChangedValue: %s', JSON.stringify(event));
 
-        if (event.options.mtId === this.mtId) {
+        if (_.isUndefined(event.options.mtId) || event.options.mtId === this.mtId) {
             _.each(event.changes, function(change) {
                 var paramModel = this.findWhere({param: change.property});
                 if (_.isUndefined(paramModel)) {
-                    mtlog.warn("No model for parameter '%s'", change.property);
+                    this.addParam(change.property, change.value);
                 } else {
                     paramModel.set({value: change.value}, event.options);
                 }

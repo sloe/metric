@@ -309,3 +309,44 @@ MtYouTubePlayer.prototype.publishControlFinish = function() {
         Backbone.Mediator.publish(eventId, this._changeEventData(false));
     }
 };
+
+
+function MtYouTubeHandler() {};
+
+MtYouTubeHandler.prototype.create = function(gdata) {
+    this.gdata = gdata;
+};
+
+
+MtYouTubeHandler.prototype._paramYtInfoData = function(params, options) {
+    return {
+        changes: params,
+        options: _.extend({
+            originator: 'youtube_handler',
+            source: 'ytinfo'
+        }, options)
+    };
+}
+
+
+MtYouTubeHandler.prototype.publishParamChange = function(params, options) {
+    var eventId = 'mt:paramChangedValue';
+    Backbone.Mediator.publish(eventId, this._paramYtInfoData(params, options));
+};
+
+
+MtYouTubeHandler.prototype.handleYtInfo = function(ytInfo) {
+    mtlog.warn(ytInfo);
+
+    var params = [{
+        property: 'video_description',
+        value: ytInfo.snippet.description
+    }, {
+        property: 'video_title',
+        value: ytInfo.snippet.title
+    }];
+
+    var options = {};
+
+    this.publishParamChange(params, options);
+};

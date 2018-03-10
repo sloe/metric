@@ -8,12 +8,12 @@ def videos():
              (db.t_mtitem.id == db.t_mtdataset.f_item) &
              (db.t_mtitemtype.id == db.t_mtitem.f_itemtype))
     fields = (db.t_mtdataset.id, db.t_mtdataset.f_creator,
-              db.t_mtitem.id, db.t_mtitem.f_alien_key, db.t_mtitem.f_alien_params,
+              db.t_mtitem.id, db.t_mtitem.f_name, db.t_mtitem.f_alien_key, db.t_mtitem.f_alien_params,
               db.t_mtitemtype.f_key, db.t_mtitemtype.f_name)
 
     header_list = (
         'Dataset ID','Dataset creator',
-        'Item ID', 'Item alien key', 'Item alien params',
+        'Item ID', 'Item name', 'Item alien key', 'Item alien params',
         'ItemType key', 'Itemtype name'
     )
 
@@ -22,7 +22,7 @@ def videos():
         headers['%s.%s' % (field.tablename, field.name)] = header_list[i]
 
     for field in fields:
-        field.readable = field is db.t_mtdataset.id or field is db.t_mtitem.f_alien_key
+        field.readable = field is db.t_mtdataset.id or field is db.t_mtitem.f_name or field is db.t_mtitem.f_alien_key
 
 
     def __link_url(row, suffix=[]):
@@ -45,6 +45,7 @@ def videos():
         field_id=db.t_mtdataset.id,
         headers=headers,
         links=links,
+        maxtextlength=128,
         paginate=100
     )
 

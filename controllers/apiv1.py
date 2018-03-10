@@ -14,6 +14,3 @@ def param():
     return metric.rest.rest_handlers('param', db.t_mtdataset, 'f_param')
 
 
-def ytinfo():
-    import metric.yt
-    return PRE(metric.yt.ytinfo())

@@ -17,7 +17,7 @@ stateManager.create(gdata, 0);
 
 player = new MtYouTubePlayer();
 function onYouTubeIframeAPIReady() {
-    player.create(0, '{{=item_row.f_alien_key}}', true);
+    player.create(0, '{{=alien_key}}', true);
 }
 //->></script>
 
@@ -76,8 +76,12 @@ var intervalCollection = new MtIntervalCollection(null, {datasetId: datasetId, g
 var intervalTable = new MtIntervalTable();
 var paramTable = new MtParamTable();
 var chartRate = new MtChart();
+var youTubeHandler = new MtYouTubeHandler();
+var mtCallback = new MtCallback();
 
 $(function () {
+    youTubeHandler.create(gdata);
+    mtCallback.create(gdata, youTubeHandler);
     paramTable.create(0, paramCollection);
     intervalTable.create(gdata, 0, intervalCollection);
     chartRate.create(gdata, 0, intervalCollection);
@@ -97,7 +101,7 @@ $(function () {
 {{
 write_mt_control_title('ytinfo', 'YouTube data', 'Information retrieved via the YouTube Data API')
 }}
-{{=LOAD('apiv1', 'ytinfo', args=[alien_key])}}
+{{=LOAD('load', 'ytinfo', ajax=True, args=[alien_key])}}
 
 {{=HR()}}
 End.
