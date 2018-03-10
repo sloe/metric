@@ -5,8 +5,11 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
+google-api-python-client = "*"
 gunicorn = "*"
+psycopg2 = "*"
 requests = "*"
+
 
 [requires]
 python_version = "2.7"

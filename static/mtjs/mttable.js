@@ -277,13 +277,12 @@ function MtIntervalTable () {
 };
 
 
-function MtParamTable () {
+function MtParamTableBase () {
 
     this.create = function(mtId, paramCollection) {
         this.mtId = mtId;
         this.paramCollection = paramCollection;
 
-        this.containerName = 'paramtable' + mtId;
         this.containerElem = document.getElementById(this.containerName);
 
         function makeParam() {
@@ -363,3 +362,27 @@ function MtParamTable () {
     };
 
 };
+
+
+MtParamTable.prototype = Object.create(new MtParamTableBase());
+
+function MtParamTable () {
+
+    this.create = function(mtId, paramCollection) {
+
+        this.containerName = 'paramtable' + mtId;
+        MtParamTable.prototype.create.apply(this, arguments);
+    };
+};
+
+MtSessionTable.prototype = Object.create(new MtParamTableBase());
+
+function MtSessionTable () {
+
+    this.create = function(mtId, paramCollection) {
+
+        this.containerName = 'sessiontable' + mtId;
+        MtSessionTable.prototype.create.apply(this, arguments);
+    };
+};
+

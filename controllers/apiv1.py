@@ -14,3 +14,8 @@ def param():
     return metric.rest.rest_handlers('param', db.t_mtdataset, 'f_param')
 
 
+@auth.jwt_handler.allows_jwt(required=False)
+@request.restful()
+def session():
+    import metric.rest
+    return metric.rest.rest_handlers('session', db.t_mtdataset, 'f_session')

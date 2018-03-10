@@ -267,21 +267,11 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 var MtParamModel = Backbone.Model.extend({
     recalculate: function(options) {
-        if (options.originator !== 'fetch' && (_.isUndefined(options.ongoing) || !options.ongoing)) {
-            var rowIndex = this.collection.indexOf(this);
-            if (!_.isUndefined(rowIndex)) {
-                if (rowIndex < 0) {
-                    mtlog.log('MtIntervalModel.recalculate: Bad row index ' + rowIndex);
-                } else {
-                    // this.save(null, {url: this.collection.url + '/' + rowIndex});
-                }
-            }
-        }
     }
 });
 
 
-var MtParamCollection = Backbone.Collection.extend({
+var MtParamCollectionBase = Backbone.Collection.extend({
     comparator: 'order',
     model: MtParamModel,
     parse: function(response) {
@@ -294,21 +284,6 @@ var MtParamCollection = Backbone.Collection.extend({
         this.datasetId = options.datasetId;
         this.gdata = options.gdata;
         this.mtId = options.mtId;
-        this.url = '/apiv1/param/' + this.datasetId;
-
-        this.propertyDefs = {
-            speed_factor: { displayName: 'Speed factor', order: 100, value: 1.0},
-            video_duration: { displayName: 'Video duration', order: 200, value: null},
-            privacy_status: { displayName: 'Privacy status', dropdownOptions: ['public', 'unlisted', 'private'], order: 300, value: null},
-            upload_status: { displayName: 'Upload status', order: 400, value: null},
-            license: { displayName: 'Licence', order: 500, value: null},
-            embeddable: { displayName: 'Embeddable', order: 600, value: null},
-            view_count: { displayName: 'View count', order: 700, value: null},
-            video_title: { displayName: 'Video title', order: 800, value: "Not determined"},
-            video_description: { displayName: 'Video description', order: 900, value: "Not determined"},
-            min_rate_per_min: { displayName: 'Minimum rate supported', order: 1000, value: 10.0},
-            max_rate_per_min: { displayName: 'Maximum rate supported', order: 1100, value: 60.0}
-        };
 
         this.on('change', this.onChange, this);
         this.on('update', this.onUpdate, this);
@@ -433,6 +408,43 @@ var MtParamCollection = Backbone.Collection.extend({
         Backbone.sync("create", this, {url: this.url + '?_token=' + this.gdata.served.jwtToken});
     },
 });
+
+
+
+var MtParamCollection = MtParamCollectionBase.extend({
+
+    initialize: function(models, options) {
+        MtParamCollection.__super__.initialize.apply(this, arguments);
+        this.url = '/apiv1/param/' + this.datasetId;
+
+        this.propertyDefs = {
+            speed_factor: { displayName: 'Speed factor', order: 100, value: 1.0},
+            video_duration: { displayName: 'Video duration', order: 200, value: null},
+            privacy_status: { displayName: 'Privacy status', dropdownOptions: ['public', 'unlisted', 'private'], order: 300, value: null},
+            upload_status: { displayName: 'Upload status', order: 400, value: null},
+            license: { displayName: 'Licence', order: 500, value: null},
+            embeddable: { displayName: 'Embeddable', order: 600, value: null},
+            view_count: { displayName: 'View count', order: 700, value: null},
+            video_title: { displayName: 'Video title', order: 800, value: "Not determined"},
+            video_description: { displayName: 'Video description', order: 900, value: "Not determined"}
+        };
+    }
+});
+
+
+var MtSessionCollection = MtParamCollectionBase.extend({
+
+    initialize: function(models, options) {
+        MtParamCollection.__super__.initialize.apply(this, arguments);
+        this.url = '/apiv1/session/' + this.datasetId;
+
+        this.propertyDefs = {
+            min_rate_per_min: { displayName: 'Minimum rate supported', order: 1000, value: 10.0},
+            max_rate_per_min: { displayName: 'Maximum rate supported', order: 1100, value: 60.0}
+        };
+    }
+});
+
 
 
 function MtStateManager() {};

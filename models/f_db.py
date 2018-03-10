@@ -56,6 +56,7 @@ db.define_table(
     Field('f_item', 'reference t_mtitem', comment='Item this dataset relates to', notnull=True, requires=IS_IN_DB(db, 't_mtitem.id', '%(f_name)s (%(id)d)', zero=None)),
     Field('f_owner', 'reference auth_group', comment='Group that owns this item', default=lambda: auth.user and auth.user_group()),
     Field('f_param', 'json', comment='Parameters in JSON format', default={}, notnull=True, requires=IS_JSON()),
+    Field('f_session', 'json', comment='Session parameters in JSON format', default={}, notnull=True, requires=IS_JSON()),
     Field('f_session_id', comment='Session that owns this item, if no group is present', default=lambda: response.session_id)
 )
 

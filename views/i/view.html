@@ -15,10 +15,6 @@ gdata.create("{{=gdata_served_jb64}}");
 var stateManager = new MtStateManager();
 stateManager.create(gdata, 0);
 
-player = new MtYouTubePlayer();
-function onYouTubeIframeAPIReady() {
-    player.create(0, '{{=alien_key}}', true);
-}
 //->></script>
 
 {{ write_mt_control_bar(mode) }}
@@ -54,10 +50,10 @@ pass
 write_mt_control_title('interval_table', 'Intervals', 'Each row calculates the rate for one time interval, supporting copy, paste and right-click.  '
     'You can build up one row per stroke, or rows for groups of strokes.')
 }}
-<div id="intervaltable0"></div>
 {{
 write_mt_interval_table_bar(mode)
 }}
+<div id="intervaltable0"></div>
 {{
 write_mt_control_title('chart', 'Rate chart', 'A graph of stroke rate over time')
 }}
@@ -66,44 +62,60 @@ write_mt_control_title('chart', 'Rate chart', 'A graph of stroke rate over time'
 write_mt_control_title('param_table', 'Parameters', 'Values for this particular video')
 }}
 <div id="paramtable0"></div>
-
+{{
+write_mt_control_title('session_table', 'Session parameters', 'Values for this particular browser session')
+}}
+<div id="sessiontable0"></div>
 
 <script>
 
 var datasetId = {{=XML(dataset_id)}};
 var paramCollection = new MtParamCollection(null, {datasetId: datasetId, gdata: gdata, mtId: 0});
+var sessionCollection = new MtSessionCollection(null, {datasetId: datasetId, gdata: gdata, mtId: 0});
 var intervalCollection = new MtIntervalCollection(null, {datasetId: datasetId, gdata: gdata, mtId: 0, mtParamProvider: paramCollection});
 var intervalTable = new MtIntervalTable();
 var paramTable = new MtParamTable();
+var sessionTable = new MtSessionTable();
 var chartRate = new MtChart();
 var youTubeHandler = new MtYouTubeHandler();
 var mtCallback = new MtCallback();
+
+var player = new MtYouTubePlayer();
+function onYouTubeIframeAPIReady() {
+    player.create(0, '{{=alien_key}}', true);
+}
 
 $(function () {
     youTubeHandler.create(gdata);
     mtCallback.create(gdata, youTubeHandler);
     paramTable.create(0, paramCollection);
+    sessionTable.create(0, sessionCollection);
     intervalTable.create(gdata, 0, intervalCollection);
     chartRate.create(gdata, 0, intervalCollection);
     stateManager.addSaveable(intervalCollection);
     stateManager.addSaveable(paramCollection);
+    stateManager.addSaveable(sessionCollection);
 
     var loadIntervalJob = intervalCollection.loadInitial();
     var loadParamJob = paramCollection.loadInitial();
-    $.when(loadIntervalJob, loadParamJob).done(function () {
+    var loadSessionJob = sessionCollection.loadInitial();
+    $.when(loadIntervalJob, loadParamJob, loadSessionJob).done(function () {
         intervalCollection.recalculateAll({originator: 'fetch'});
     });
-
 });
 
 </script>
 
-{{
-write_mt_control_title('ytinfo', 'YouTube data', 'Information retrieved via the YouTube Data API')
-}}
 {{=LOAD('load', 'ytinfo', ajax=True, args=[alien_key])}}
 
 {{=HR()}}
 End.
 {{=HR()}}
 
+<script>
+// Asynchronous load of YouTube player
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+</script>
