@@ -67,7 +67,7 @@ do
 done
 
 
-for parent in $APP_DIR $ADMIN_DIR
+for parent in $ADMIN_DIR $APP_DIR
 do
   cd $parent
   for dir in databases errors private sessions uploads

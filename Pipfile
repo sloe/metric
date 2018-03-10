@@ -10,6 +10,5 @@ gunicorn = "*"
 psycopg2 = "*"
 requests = "*"
 
-
 [requires]
 python_version = "2.7"
