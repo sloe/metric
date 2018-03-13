@@ -39,6 +39,8 @@ def write_mt_control_bar(mode):
         content.append("Improper mode, please reload")
     pass
 
+    content.append(BUTTON("Show debug info", _class="control_bar_button control_bar_button_left control_bar_button_showdebug"))
+
     response.write(DIV(content))
 
     pass # Terminates function

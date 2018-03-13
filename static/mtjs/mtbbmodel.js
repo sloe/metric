@@ -113,6 +113,10 @@ var MtIntervalCollection = Backbone.Collection.extend({
         this.mtId = options.mtId;
         this.mtParamProvider = options.mtParamProvider;
         this.url = '/apiv1/interval/' + this.datasetId;
+
+        this.debugName = 'intervaldebug' + this.mtId;
+        this.debugInfoElems = $('#' + this.debugName + '_debuginfo');
+
         // this.on('all', this.onAll, this);
         this.on('add', this.onAdd, this);
         this.on('change', this.onChange, this);
@@ -120,6 +124,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
         Backbone.Mediator.subscribe('mt:controlFinish', this.onMtControlChangedValueOrFinish, this);
         Backbone.Mediator.subscribe('mt:intervalRowsDeleted', this.onMtIntervalRowsDeleted, this);
         Backbone.Mediator.subscribe('mt:paramCollectionValueChange', this.onMtParamCollectionValueChange, this);
+        Backbone.Mediator.subscribe('mt:updateDebugInfo', this.onMtUpdateDebugInfo, this);
     },
 
 
@@ -261,6 +266,12 @@ var MtIntervalCollection = Backbone.Collection.extend({
         mtlog.log('MtIntervalCollection.onMtParamCollectionValueChange: ' + JSON.stringify(event));
 
         this.recalculateAll(options);
+    },
+
+
+    onMtUpdateDebugInfo: function(event) {
+        var debugInfo = JSON.stringify(this, null, 2);
+        this.debugInfoElems.html('<h4>Interval debug info</h4><pre>' + _.escape(debugInfo) + '</pre>');
     }
 });
 

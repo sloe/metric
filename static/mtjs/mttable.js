@@ -14,6 +14,9 @@ function MtIntervalTable () {
         this.addRowElems = $('.interval_bar_button_add_row');
         this.removeRowElems = $('.interval_bar_button_remove_row');
 
+        this.debugName = 'intervaltabledebug' + mtId;
+        this.debugInfoElems = $('#' + this.debugName + '_debuginfo');
+
         this.columnAttrs = [
             'start_time',
             'end_time',
@@ -93,6 +96,7 @@ function MtIntervalTable () {
         Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
         Backbone.Mediator.subscribe('mt:controlFinish', this.onMtControlFinish, this);
         Backbone.Mediator.subscribe('mt:setSelection', this.onMtSetSelection, this);
+        Backbone.Mediator.subscribe('mt:updateDebugInfo', this.onMtUpdateDebugInfo, this);
 
 
         this.addRowElems.click(this.onClickAddRow.bind(this));
@@ -273,6 +277,16 @@ function MtIntervalTable () {
             this.hot.selectCell(row, column, row, column, false);
             this.hot.render();
         }
+    };
+
+
+    this.onMtUpdateDebugInfo = function(event) {
+        var debugInfo = {
+            lastSelection: this.lastSelection,
+            selected: this.hot.getSelected()
+        };
+        var debugInfoStr = JSON.stringify(debugInfo, null, 2);
+        this.debugInfoElems.html('<h4>Table debug info</h4><pre>' + _.escape(debugInfoStr) + '</pre>');
     };
 };
 

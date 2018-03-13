@@ -12,29 +12,31 @@ MtControlBar.prototype.create = function(gdata, mtId, stateManager) {
     this.duplicateElems = $('.control_bar_button_duplicate');
     this.editElems = $('.control_bar_button_edit');
     this.saveElems = $('.control_bar_button_save');
+    this.showDebugElems = $('.control_bar_button_showdebug');
 
     this.discardElems.click(this.onClickDiscard.bind(this));
     this.duplicateElems.click(this.onClickDuplicate.bind(this));
     this.editElems.click(this.onClickEdit.bind(this));
     this.saveElems.click(this.onClickSave.bind(this));
-}
+    this.showDebugElems.click(this.onClickShowDebug.bind(this));
+};
 
 
 MtControlBar.prototype.onClickDiscard = function(event) {
     if (confirm("This will discard all changes since the last save.  Discard?")) {
         location.href = this.gdata.served.baseUrl;
     }
-}
+};
 
 
 MtControlBar.prototype.onClickDuplicate = function(event) {
     location.href = this.gdata.served.baseUrl + '/edit?duplicate=1';
-}
+};
 
 
 MtControlBar.prototype.onClickEdit = function(event) {
     location.href = this.gdata.served.baseUrl + '/edit';
-}
+};
 
 
 MtControlBar.prototype.onClickSave = function(event) {
@@ -45,4 +47,10 @@ MtControlBar.prototype.onClickSave = function(event) {
     catch (err) {
         alert(err.toString());
     }
-}
+};
+
+
+MtControlBar.prototype.onClickShowDebug = function(event) {
+    this.showDebugElems.text('Update Debug Info');
+    Backbone.Mediator.publish('mt:updateDebugInfo');
+};

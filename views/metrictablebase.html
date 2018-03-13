@@ -10,6 +10,7 @@ def write_mt_interval_table_bar(mode):
     if mode == 'edit':
         content.append(BUTTON("Add row", _class="interval_bar_button_left interval_bar_button_add_row"))
         content.append(BUTTON("Remove row", _class="interval_bar_button_left interval_bar_button_remove_row"))
+        content.append(BUTTON("Show debug info", _class="interval_bar_button_left control_bar_button_showdebug"))
     pass
 
     response.write(DIV(content))
