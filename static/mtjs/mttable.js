@@ -7,6 +7,7 @@ function MtIntervalTable () {
         this.gdata = gdata;
         this.mtId = mtId;
         this.intervalCollection = intervalCollection;
+        this.ignoreNextSelection = false;
 
         this.containerName = 'intervaltable' + mtId;
         this.containerElem = document.getElementById(this.containerName);
@@ -33,7 +34,7 @@ function MtIntervalTable () {
             'Interval',
             'Number',
             'Rate',
-            'Break',
+            'Break before next',
             'Notes'
         ];
 
@@ -110,7 +111,7 @@ function MtIntervalTable () {
 
 
     this.onIntervalCollectionUpdate = function(collection, options) {
-        mtlog.log('MtIntervalTable.onIntervalCollectionUpdate: ' + (collection.mtName && collection.mtName()) + ', ' + JSON.stringify(options));
+        // mtlog.log('MtIntervalTable.onIntervalCollectionUpdate: ' + (collection.mtName && collection.mtName()) + ', ' + JSON.stringify(options));
         var selection = this.hot.getSelected();
         if (_.isUndefined(selection)) {
             this.hot.selectCell(0, 0, 0, 0, false);
@@ -164,7 +165,9 @@ function MtIntervalTable () {
                 c2: c2
         };
 
-        if (!_.isEqual(selection, this.lastSelection)) {
+        if (this.ignoreNextSelection) {
+            this.ignoreNextSelection = false;
+        } else if (!_.isEqual(selection, this.lastSelection)) {
 
             var values = this.intervalCollection.at(r).attributes;
 
@@ -221,7 +224,7 @@ function MtIntervalTable () {
 
 
     this.onMtCollectionValueChange = function(model, options) {
-        mtlog.log('MtIntervalTable.onMtCollectionValueChange: ' + JSON.stringify(model) + JSON.stringify(options));
+        // mtlog.log('MtIntervalTable.onMtCollectionValueChange: ' + JSON.stringify(model) + JSON.stringify(options));
 
         if (model.collection.mtId === this.mtId && model.changed && _.keys(model.changed).length >= 1 && options.source !== 'sync' && options.source !== 'table') {
             if (_.isUndefined(options.row)) {
@@ -263,15 +266,28 @@ function MtIntervalTable () {
         mtlog.log('MtIntervalTable.onMtSetSelection: ' + JSON.stringify(event));
 
         var options = event.options;
+        var column;
         var row;
 
         if (options.mtId === this.mtId && event.changes && options.source !== 'table') {
-            var column = this.propertyNameToColumn(event.changes.activeProperty);
+
             var selection = this.hot.getSelected();
-            if (selection) {
-                row = selection[0];
+            if (_.isUndefined(selection)) {
+                selection = [0, 0, 0, 0,];
+            }
+            if (event.changes.activeProperty) {
+                column = this.propertyNameToColumn(event.changes.activeProperty);
             } else {
-                row = 0;
+                column = selection[1];
+            }
+            if (!_.isUndefined(event.changes.activeRow)) {
+                row = event.changes.activeRow;
+            } else {
+                row = selection[0];
+            }
+
+            if (event.options.source === 'playback') {
+                this.ignoreNextSelection = true;
             }
 
             this.hot.selectCell(row, column, row, column, false);

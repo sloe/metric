@@ -112,6 +112,8 @@ var MtIntervalCollection = Backbone.Collection.extend({
         this.gdata = options.gdata;
         this.mtId = options.mtId;
         this.mtParamProvider = options.mtParamProvider;
+        this.readOnly = this.gdata.served.readOnly;
+
         this.url = '/apiv1/interval/' + this.datasetId;
 
         this.debugName = 'intervaldebug' + this.mtId;
@@ -144,6 +146,8 @@ var MtIntervalCollection = Backbone.Collection.extend({
         if (collection.length == 0) {
             collection.add([{}]);
         }
+
+        this.recalculateAll(options);
     },
 
 
@@ -152,7 +156,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
             error: this.loadInitialErrorCallback,
             originator: 'fetch',
             source: 'model',
-            success: this.loadInitialSuccessCallback
+            success: this.loadInitialSuccessCallback.bind(this)
         });
     },
 
@@ -165,6 +169,9 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     saveAll: function() {
+        if (this.readOnly) {
+            mtlog.error('Unexpected saveAll when read-only');
+        }
         Backbone.sync("create", this, {url: this.url + '?_token=' + this.gdata.served.jwtToken});
     },
 
@@ -177,8 +184,11 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     onAdd: function(model, collection, options) {
-        var message = ['MtIntervalCollection.onAdd ', JSON.stringify(model), JSON.stringify(collection), JSON.stringify(options)].join(', ');
-        mtlog.log(message);
+        if (this.readOnly && options.originator !== 'fetch') {
+            mtlog.error('Unexpected onAdd when read-only');
+        }
+        // var message = ['MtIntervalCollection.onAdd ', JSON.stringify(model), JSON.stringify(options)].join(', ');
+        // mtlog.log(message);
 
         if (_.isEmpty(model.attributes)) {
             // Create default values from neighbouring rows
@@ -216,10 +226,13 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     onChange: function(model, options) {
-        var message = ['MtIntervalCollection.onChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
+        if (this.readOnly && options.originator !== 'fetch') {
+            mtlog.error('Unexpected onChange when read-only: '  + JSON.stringify(event));
+        }
+        // var message = ['MtIntervalCollection.onChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
+        // mtlog.log(message);
         var rowIndex;
 
-        mtlog.log(message);
 
         if (!options.originator && model.changed) {
             options.originator = _.keys(model.changed)[0]
@@ -233,32 +246,68 @@ var MtIntervalCollection = Backbone.Collection.extend({
     },
 
 
+    _findModelForTime: function(timeSec) {
+        var modelIndex = 0;
+        _.each(this.models, function(model, index) {
+            if (model.attributes.start_time < timeSec) {
+                modelIndex = index;
+            }
+        });
+        return modelIndex;
+    },
+
+
     onMtControlChangedValueOrFinish: function(event) {
+
         mtlog.log('MtIntervalCollection.onMtControlChangedValueOrFinish: ' + JSON.stringify(event));
-        if (event.options.mtId === this.mtId) {
+        if (this.readOnly) {
             _.each(event.changes, function(change) {
-                var selectedModel = this.at(change.row);
-                var setParamsSilent = {};
-                var setParams = {};
-                setParamsSilent[change.property] = change.value + 1;
-                setParams[change.property] = change.value;
-                // Make sure that change event is triggered if the value is unchanged (FIXME)
-                selectedModel.set(setParamsSilent, {silent: true});
-                selectedModel.set(setParams, event.options);
-                selectedModel.recalculate(event.options);
+                 if (change.property === 'start_time' || change.property === 'end_time') {
+                    var modelIndex = this._findModelForTime(change.value);
+                    Backbone.Mediator.publish('mt:setSelection', {
+                        changes: {
+                            activeRow: modelIndex
+                        },
+                        options: {
+                            mtId: this.mtId,
+                            source: 'playback'
+                        }
+                    });
+                }
             }, this);
+        } else {
+            if (event.options.mtId === this.mtId && !this.readOnly) {
+                _.each(event.changes, function(change) {
+                    var selectedModel = this.at(change.row);
+                    var setParamsSilent = {};
+                    var setParams = {};
+                    setParamsSilent[change.property] = change.value + 1;
+                    setParams[change.property] = change.value;
+                    // Make sure that change event is triggered if the value is unchanged (FIXME)
+                    selectedModel.set(setParamsSilent, {silent: true});
+                    selectedModel.set(setParams, event.options);
+                    selectedModel.recalculate(event.options);
+                }, this);
+            }
         }
     },
 
 
     onMtIntervalRowsDeleted: function(event) {
+        if (this.readOnly) {
+            mtlog.error('Unexpected onChange when read-only: '  + JSON.stringify(event));
+        }
         mtlog.log('MtIntervalCollection.onMtIntervalRowsDeleted: ' + JSON.stringify(event));
-        if (event.mtId === this.mtId) {
+        if (event.mtId === this.mtId && !this.readOnly) {
             for (var rowIndex = event.index; rowIndex < event.index + event.amount; rowIndex++) {
                 var model_to_destroy = this.at(rowIndex);
                 model_to_destroy.destroy({source: event.source, url: this.url + '/' + rowIndex});
             }
         }
+
+        this.recalculateAll({
+            originator: 'table'
+        });
     },
 
 

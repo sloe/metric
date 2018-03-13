@@ -79,16 +79,19 @@ MtChart.prototype.create = function(gdata, mtId, intervalCollection) {
 
     });
 
+
+    this.intervalCollection.on('update', this.onIntervalCollectionUpdate, this);
+
     Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtIntervalCollectionValueChange, this);
     Backbone.Mediator.subscribe('mt:selectionChange', this.onSelectionChange, this);
 };
 
 
-MtChart.prototype._dataFromModel = function(model, options) {
+MtChart.prototype._dataFromCollection = function(collection, options) {
     var x = [];
     var y = [];
 
-    _.each(model.collection.models, function(model) {
+    _.each(collection.models, function(model) {
         var startTime = model.attributes['start_time'];
         var endTime = model.attributes['end_time'];
         var numEvents = model.attributes['num_events'];
@@ -107,8 +110,8 @@ MtChart.prototype._dataFromModel = function(model, options) {
 }
 
 
-MtChart.prototype._updateFromModel = function(model, options) {
-    var data = this._dataFromModel(model, options);
+MtChart.prototype._updateFromCollection = function(collection, options) {
+    var data = this._dataFromCollection(collection, options);
     this.chart.load({
           xs: {
             'rate': 'ratex',
@@ -123,6 +126,11 @@ MtChart.prototype._updateFromModel = function(model, options) {
 }
 
 
+MtChart.prototype.onIntervalCollectionUpdate = function(collection, options) {
+    this._updateFromCollection(collection, options);
+};
+
+
 MtChart.prototype.onMtIntervalCollectionValueChange = function(model, options) {
 
     if (model.collection.mtId === this.mtId && model.changed && options.source !== this.sourceName) {
@@ -130,16 +138,16 @@ MtChart.prototype.onMtIntervalCollectionValueChange = function(model, options) {
             var msecSinceLast = Date.now() - this.lastUpdateMsec;
             this.chart.unselect(['rate']);
             clearTimeout(this.updateTimeout);
-            var boundCall = (function(model, options) { this._updateFromModel(model, options); }).bind(this);
+            var boundCall = (function(model, options) { this._updateFromCollection(model.collection, options); }).bind(this);
             var fractionOfTransitionMsec = this.transitionMsec / 2;
             if  (msecSinceLast < fractionOfTransitionMsec) {
                 this.updateTimeout = setTimeout(boundCall, fractionOfTransitionMsec - msecSinceLast, model, options);
             } else {
-                this._updateFromModel(model, options);
+                this._updateFromCollection(model.collection, options);
             }
         } else {
             clearTimeout(this.updateTimeout);
-            this._updateFromModel(model, options);
+            this._updateFromCollection(model.collection, options);
             if (_.isFinite(this.activeRow) && !_.isUndefined(options.source) && options.source.startsWith('slider:')) {
                 this.chart.select(['rate'], [this.activeRow]);
             } else {
