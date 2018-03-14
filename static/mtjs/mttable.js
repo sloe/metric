@@ -7,7 +7,6 @@ function MtIntervalTable () {
         this.gdata = gdata;
         this.mtId = mtId;
         this.intervalCollection = intervalCollection;
-        this.ignoreNextSelection = false;
 
         this.containerName = 'intervaltable' + mtId;
         this.containerElem = document.getElementById(this.containerName);
@@ -89,10 +88,12 @@ function MtIntervalTable () {
             return 6;
         }
 
+        this.tableAfterSelectionCallback = this.tableAfterSelectionEnd.bind(this);
+
         this.intervalCollection.on('update', this.onIntervalCollectionUpdate, this);
 
         this.hot.addHook('beforeRemoveRow', this.tableBeforeRemoveRow.bind(this));
-        this.hot.addHook('afterSelectionEnd', this.tableAfterSelectionEnd.bind(this));
+        this.hot.addHook('afterSelectionEnd', this.tableAfterSelectionCallback);
 
         Backbone.Mediator.subscribe('mt:intervalCollectionValueChange', this.onMtCollectionValueChange, this);
         Backbone.Mediator.subscribe('mt:controlFinish', this.onMtControlFinish, this);
@@ -165,9 +166,7 @@ function MtIntervalTable () {
                 c2: c2
         };
 
-        if (this.ignoreNextSelection) {
-            this.ignoreNextSelection = false;
-        } else if (!_.isEqual(selection, this.lastSelection)) {
+        if (!_.isEqual(selection, this.lastSelection)) {
 
             var values = this.intervalCollection.at(r).attributes;
 
@@ -226,7 +225,9 @@ function MtIntervalTable () {
     this.onMtCollectionValueChange = function(model, options) {
         // mtlog.log('MtIntervalTable.onMtCollectionValueChange: ' + JSON.stringify(model) + JSON.stringify(options));
 
-        if (model.collection.mtId === this.mtId && model.changed && _.keys(model.changed).length >= 1 && options.source !== 'sync' && options.source !== 'table') {
+        if (model.collection.mtId === this.mtId && model.changed && _.keys(model.changed).length >= 1 &&
+            options.originator !== 'fetch' && options.source !== 'sync' && options.source !== 'table'
+        ) {
             if (_.isUndefined(options.row)) {
                 mtlog.log("Error: MtIntervalTable.onMtCollectionValueChange undefined row");
             } else {
@@ -268,14 +269,19 @@ function MtIntervalTable () {
         var options = event.options;
         var column;
         var row;
+        var selection;
 
         if (options.mtId === this.mtId && event.changes && options.source !== 'table') {
 
-            var selection = this.hot.getSelected();
-            if (_.isUndefined(selection)) {
-                selection = [0, 0, 0, 0,];
+            var originalSelection = this.hot.getSelected();
+            if (_.isUndefined(originalSelection)) {
+                selection = [0, 0, 0, 0];
+            } else {
+                selection = originalSelection;
             }
-            if (event.changes.activeProperty) {
+            if (!_.isUndefined(event.changes.activeColumn)) {
+                column = event.changes.activeColumn;
+            } else if (event.changes.activeProperty) {
                 column = this.propertyNameToColumn(event.changes.activeProperty);
             } else {
                 column = selection[1];
@@ -286,12 +292,16 @@ function MtIntervalTable () {
                 row = selection[0];
             }
 
-            if (event.options.source === 'playback') {
-                this.ignoreNextSelection = true;
-            }
+            if (row !== selection[0] || column !== selection[1] || _.isUndefined(originalSelection)) {
+                if (event.options.source === 'playback') {
+                    this.hot.selection.setRangeStartOnly(new CellCoords(row, column));
+                    this.hot.selection.setRangeEnd(new CellCoords(row, column), false);
+                } else {
+                    this.hot.selectCell(row, column, row, column, false);
+                }
 
-            this.hot.selectCell(row, column, row, column, false);
-            this.hot.render();
+                this.hot.render();
+            }
         }
     };
 

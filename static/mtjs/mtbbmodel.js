@@ -142,21 +142,39 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
     loadInitialSuccessCallback: function(collection, response, options) {
         mtlog.debug("MtIntervalCollection.loadInitialSuccessCallback: collection=%s, response=%s, options=%s", collection, JSON.stringify(response), JSON.stringify(options));
-
-        if (collection.length == 0) {
-            collection.add([{}]);
-        }
-
-        this.recalculateAll(options);
     },
 
 
     loadInitial: function() {
-        return this.fetch({
+        var self = this;
+
+        var result = this.fetch({
             error: this.loadInitialErrorCallback,
             originator: 'fetch',
             source: 'model',
             success: this.loadInitialSuccessCallback.bind(this)
+        }).done(function() {
+
+            if (self.length == 0) {
+                self.add([{}]);
+            }
+
+            self.recalculateAll({
+                mtId: self.mtId,
+                originator: 'fetch'
+            });
+
+            Backbone.Mediator.publish('mt:setSelection', {
+                changes: {
+                    activeColumn: 0,
+                    activeRow: 0
+                },
+                options: {
+                    mtId: self.mtId,
+                    originator: 'fetch'
+                }
+            });
+
         });
     },
 
