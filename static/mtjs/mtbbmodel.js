@@ -304,9 +304,10 @@ var MtIntervalCollection = Backbone.Collection.extend({
                     setParamsSilent[change.property] = change.value + 1;
                     setParams[change.property] = change.value;
                     // Make sure that change event is triggered if the value is unchanged (FIXME)
+                    selectedModel._changing = false; // FIXME fix stuck chaging problem
                     selectedModel.set(setParamsSilent, {silent: true});
                     selectedModel.set(setParams, event.options);
-                    selectedModel.recalculate(event.options);
+                    // Redundant?  onChange does it: selectedModel.recalculate(event.options);
                 }, this);
             }
         }
