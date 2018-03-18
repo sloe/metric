@@ -319,7 +319,8 @@ function MtIntervalTable () {
 
 function MtParamTableBase () {
 
-    this.create = function(mtId, paramCollection) {
+    this.create = function(gdata, mtId, paramCollection) {
+        this.gdata = gdata;
         this.mtId = mtId;
         this.paramCollection = paramCollection;
 
@@ -329,23 +330,7 @@ function MtParamTableBase () {
             return new MtParamModel();
         };
 
-        function paramRenderer(instance, td, row, col, prop, value, cellProperties) {
-            Handsontable.renderers.BaseRenderer.apply(this, arguments);
-            if (prop() === 'value') {
-                var model = this.paramCollection.models[row];
-                if (_.isUndefined(model)) {
-                    mtlog.warn('Undefined model index ' + row);
-                } else if (model.attributes.dropdownOptions) {
-                    cellProperties.source = model.attributes.dropdownOptions;
-                    cellProperties.filter = false;
-                    cellProperties.strict = true;
-                    cellProperties.type = 'dropdown';
-                    cellProperties.validator = 'autocomplete';
-                    return Handsontable.renderers.DropdownRenderer.apply(this, arguments);
-                }
-            }
-            return Handsontable.renderers.TextRenderer.apply(this, arguments);
-        };
+
 
         function columnFn(that, name) {
             return {
@@ -357,8 +342,7 @@ function MtParamTableBase () {
                     } else {
                         param.set(name, value, {source: 'table'});
                     }
-                },
-                renderer: paramRenderer.bind(that)
+                }
             };
         };
 
@@ -376,6 +360,7 @@ function MtParamTableBase () {
             minSpareRows: 0,
             minSpareCols: 0,
             outsideClickDeselects : true,
+            readOnly: this.gdata.served.readOnly,
             undo: true
         });
 
@@ -390,14 +375,46 @@ function MtParamTableBase () {
     };
 
 
+
+    this.updateCellProperties = function(options) {
+
+        var rowCount = this.hot.countRows();
+        var valueCol = 1;
+        for (var rowIndex = 1; rowIndex < rowCount; rowIndex++) {
+            mtlog.log('Row ' + rowIndex.toFixed());
+
+            var model = this.paramCollection.models[rowIndex];
+            if (_.isUndefined(model)) {
+                mtlog.warn('Undefined model index ' + row);
+            } else {
+                var valueCellMetadata = this.hot.getCellMeta(rowIndex, valueCol);
+                var valueCellProperties = valueCellMetadata.prop;
+
+                if (model.attributes.dropdownOptions) {
+                    this.hot.setCellMeta(rowIndex, valueCol, 'source', model.attributes.dropdownOptions);
+                    this.hot.setCellMeta(rowIndex, valueCol, 'filter', false);
+                    this.hot.setCellMeta(rowIndex, valueCol, 'strict', true);
+                    this.hot.setCellMeta(rowIndex, valueCol, 'type', 'dropdown');
+                    this.hot.setCellMeta(rowIndex, valueCol, 'validator', 'autocomplete');
+                    this.hot.setCellMeta(rowIndex, valueCol, 'renderer', Handsontable.renderers.DropdownRenderer);
+                }
+                if (model.attributes.readOnly) {
+                    this.hot.setCellMeta(rowIndex, valueCol, 'readOnly', true);
+                }
+            }
+        }
+    },
+
     this.onParamCollectionUpdate = function(collection, options) {
         // mtlog.log('MtParamTable.onParamCollectionUpdate: ' + (collection.mtName && collection.mtName()) + ', ' + JSON.stringify(options));
+        this.updateCellProperties();
         this.hot.render();
     };
 
 
     this.onMtParamCollectionValueBroadcast = function(models, options) {
         // mtlog.log('MtParamTable.onMtParamCollectionValueBroadcast: ' + JSON.stringify(models) + ', ' + JSON.stringify(options));
+        this.updateCellProperties();
         this.hot.render();
     };
 
@@ -408,7 +425,7 @@ MtParamTable.prototype = Object.create(new MtParamTableBase());
 
 function MtParamTable () {
 
-    this.create = function(mtId, paramCollection) {
+    this.create = function(gdata, mtId, paramCollection) {
 
         this.containerName = 'paramtable' + mtId;
         MtParamTable.prototype.create.apply(this, arguments);
@@ -419,7 +436,7 @@ MtSessionTable.prototype = Object.create(new MtParamTableBase());
 
 function MtSessionTable () {
 
-    this.create = function(mtId, paramCollection) {
+    this.create = function(gdata, mtId, paramCollection) {
 
         this.containerName = 'sessiontable' + mtId;
         MtSessionTable.prototype.create.apply(this, arguments);

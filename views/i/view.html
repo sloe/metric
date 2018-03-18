@@ -90,8 +90,8 @@ function onYouTubeIframeAPIReady() {
 $(function () {
     youTubeHandler.create(gdata);
     mtCallback.create(gdata, youTubeHandler);
-    paramTable.create(0, paramCollection);
-    sessionTable.create(0, sessionCollection);
+    paramTable.create(gdata, 0, paramCollection);
+    sessionTable.create(gdata, 0, sessionCollection);
     intervalTable.create(gdata, 0, intervalCollection);
     chartRate.create(gdata, 0, intervalCollection);
     stateManager.addSaveable(intervalCollection);
@@ -102,7 +102,9 @@ $(function () {
     var loadParamJob = paramCollection.loadInitial();
     var loadSessionJob = sessionCollection.loadInitial();
     $.when(loadIntervalJob, loadParamJob, loadSessionJob).done(function () {
-        intervalCollection.recalculateAll({originator: 'fetch'});
+        intervalCollection.postLoadInitial();
+        paramCollection.postLoadInitial();
+        sessionCollection.postLoadInitial();
     });
 });
 

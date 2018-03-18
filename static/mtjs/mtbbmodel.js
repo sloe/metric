@@ -9,6 +9,9 @@ var MtIntervalModel = Backbone.Model.extend({
         var attr = this.attributes;
         var paramProvider = this.collection.mtParamProvider;
         var speedFactor = paramProvider.getParam('speed_factor');
+        if (_.isNull(speedFactor)) {
+            speedFactor = 1.0;
+        }
 
         // If recalculation changes values we set them in the normal Backbone way, but we don't that set operation
         // to cause another recalculation.  We do want changes to cascade so that e.g. a change we make to end time
@@ -42,7 +45,7 @@ var MtIntervalModel = Backbone.Model.extend({
         if (options.originator === 'rate' && _.isUndefined(this.changed.num_events)) {
             // Old method: rate was changed by the user so recalculate the number of events based on it
             // Old method: var newNumEvents = Math.max(1, Math.round((attr.end_time - attr.start_time) * attr.rate / (60 * speedFactor)));
-            var newEndTime = attr.start_time + attr.num_events * (60.0 / attr.rate);
+            var newEndTime = attr.start_time + attr.num_events * (speedFactor * 60.0 / attr.rate);
             this.set({end_time: newEndTime}, optionsNoRecalculate);
         }
 
@@ -125,7 +128,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
         Backbone.Mediator.subscribe('mt:controlChangedValue', this.onMtControlChangedValueOrFinish, this);
         Backbone.Mediator.subscribe('mt:controlFinish', this.onMtControlChangedValueOrFinish, this);
         Backbone.Mediator.subscribe('mt:intervalRowsDeleted', this.onMtIntervalRowsDeleted, this);
-        Backbone.Mediator.subscribe('mt:paramCollectionValueChange', this.onMtParamCollectionValueChange, this);
+        Backbone.Mediator.subscribe('mt:paramCollectionValueBroadcast', this.onMtParamCollectionValueBroadcast, this);
         Backbone.Mediator.subscribe('mt:updateDebugInfo', this.onMtUpdateDebugInfo, this);
     },
 
@@ -146,35 +149,34 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     loadInitial: function() {
-        var self = this;
-
-        var result = this.fetch({
+        this.fetch({
             error: this.loadInitialErrorCallback,
             originator: 'fetch',
             source: 'model',
             success: this.loadInitialSuccessCallback.bind(this)
-        }).done(function() {
+        });
+    },
 
-            if (self.length == 0) {
-                self.add([{}]);
-            }
 
-            self.recalculateAll({
-                mtId: self.mtId,
+    postLoadInitial: function() {
+        if (this.length == 0) {
+            this.add([{}]);
+        }
+
+        this.recalculateAll({
+            mtId: this.mtId,
+            originator: 'fetch'
+        });
+
+        Backbone.Mediator.publish('mt:setSelection', {
+            changes: {
+                activeColumn: 0,
+                activeRow: 0
+            },
+            options: {
+                mtId: this.mtId,
                 originator: 'fetch'
-            });
-
-            Backbone.Mediator.publish('mt:setSelection', {
-                changes: {
-                    activeColumn: 0,
-                    activeRow: 0
-                },
-                options: {
-                    mtId: self.mtId,
-                    originator: 'fetch'
-                }
-            });
-
+            }
         });
     },
 
@@ -329,9 +331,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
     },
 
 
-    onMtParamCollectionValueChange: function(model, options) {
-        mtlog.log('MtIntervalCollection.onMtParamCollectionValueChange: ' + JSON.stringify(event));
-
+    onMtParamCollectionValueBroadcast: function(models, options) {
         this.recalculateAll(options);
     },
 
@@ -362,23 +362,21 @@ var MtParamCollectionBase = Backbone.Collection.extend({
         this.datasetId = options.datasetId;
         this.gdata = options.gdata;
         this.mtId = options.mtId;
-
-        this.on('change', this.onChange, this);
-        this.on('update', this.onUpdate, this);
-
-        Backbone.Mediator.subscribe('mt:paramChangedValue', this.onMtParamChangedValue, this);
     },
 
 
     addParam: function(propertyName, value) {
         var propertyModel = this.findWhere({param: propertyName});
         if (_.isUndefined(propertyModel)) {
-            var propertyDef = this.propertyDefs[propertyName]
-            var addParams = _.extend(propertyDef, {
-                param: propertyName,
-                value: value
-            });
-            this.add(addParams);
+            var propertyDef = this.propertyDefs[propertyName];
+
+            if (!_.isUndefined(propertyDef)) {
+                var addParams = _.extend(propertyDef, {
+                    param: propertyName,
+                    value: value
+                });
+                this.add(addParams);
+            }
         } else {
             mtlog.error('MtParamCollection.addParam double add for' + propertyName);
         }
@@ -420,6 +418,14 @@ var MtParamCollectionBase = Backbone.Collection.extend({
     },
 
 
+    postLoadInitial: function() {
+        this.on('change', this.onChange, this);
+        this.on('update', this.onUpdate, this);
+
+        Backbone.Mediator.subscribe('mt:paramChangedValue', this.onMtParamChangedValue, this);
+    },
+
+
     onChange: function(model, options) {
         // var message = ['MtParamCollection.onChange: ', JSON.stringify(model), ', ', JSON.stringify(options)].join('');
         // mtlog.log(message);
@@ -451,14 +457,13 @@ var MtParamCollectionBase = Backbone.Collection.extend({
 
 
     onMtParamChangedValue: function(event) {
-        mtlog.log('MtParamCollection.onMtParamChangedValue: %s', JSON.stringify(event));
 
         if (_.isUndefined(event.options.mtId) || event.options.mtId === this.mtId) {
             _.each(event.changes, function(change) {
                 var paramModel = this.findWhere({param: change.property});
                 if (_.isUndefined(paramModel)) {
                     this.addParam(change.property, change.value);
-                } else {
+                } else if (change.overwrite || _.isUndefined(paramModel.attributes.value) || _.isNull(paramModel.attributes.value)) {
                     paramModel.set({value: change.value}, event.options);
                 }
             }, this);
@@ -496,15 +501,15 @@ var MtParamCollection = MtParamCollectionBase.extend({
         this.url = '/apiv1/param/' + this.datasetId;
 
         this.propertyDefs = {
-            speed_factor: { displayName: 'Speed factor', order: 100, value: 1.0},
-            video_duration: { displayName: 'Video duration', order: 200, value: null},
+            speed_factor: { displayName: 'Speed factor', order: 100, value: null},
+            video_duration: { displayName: 'Video duration', order: 200, readOnly: true, value: null},
             privacy_status: { displayName: 'Privacy status', dropdownOptions: ['public', 'unlisted', 'private'], order: 300, value: null},
-            upload_status: { displayName: 'Upload status', order: 400, value: null},
-            license: { displayName: 'Licence', order: 500, value: null},
-            embeddable: { displayName: 'Embeddable', order: 600, value: null},
-            view_count: { displayName: 'View count', order: 700, value: null},
-            video_title: { displayName: 'Video title', order: 800, value: "Not determined"},
-            video_description: { displayName: 'Video description', order: 900, value: "Not determined"}
+            upload_status: { displayName: 'Upload status', order: 400, readOnly: true, value: null},
+            license: { displayName: 'Licence', order: 500, readOnly: true, value: null},
+            embeddable: { displayName: 'Embeddable', order: 600, readOnly: true, value: null},
+            view_count: { displayName: 'View count', order: 700, readOnly: true, value: null},
+            video_title: { displayName: 'Video title', order: 800, readOnly: true, value: null},
+            video_description: { displayName: 'Video description', order: 900, readOnly: true, value: null}
         };
     }
 });
