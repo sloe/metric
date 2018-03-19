@@ -17,6 +17,8 @@ stateManager.create(gdata, 0);
 
 //->></script>
 
+{{=DIV(_class="mtalert_banner", _id="mtalert_banner_top")}}
+
 {{ write_mt_control_bar(mode) }}
 
 <script>
@@ -81,6 +83,8 @@ var sessionTable = new MtSessionTable();
 var chartRate = new MtChart();
 var youTubeHandler = new MtYouTubeHandler();
 var mtCallback = new MtCallback();
+var mtalert = new MtAlert();
+mtalert.create(gdata);
 
 var player = new MtYouTubePlayer();
 function onYouTubeIframeAPIReady() {

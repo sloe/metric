@@ -247,7 +247,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
     onChange: function(model, options) {
         if (this.readOnly && options.originator !== 'fetch') {
-            mtlog.error('Unexpected onChange when read-only: '  + JSON.stringify(event));
+            mtlog.error('Unexpected onChange when read-only: ' + JSON.stringify(model) + ', ' + JSON.stringify(options));
         }
         // var message = ['MtIntervalCollection.onChange: ', JSON.stringify(model), JSON.stringify(options)].join(', ');
         // mtlog.log(message);
@@ -316,7 +316,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
     onMtIntervalRowsDeleted: function(event) {
         if (this.readOnly) {
-            mtlog.error('Unexpected onChange when read-only: '  + JSON.stringify(event));
+            mtlog.error('Unexpected onMtIntervalRowsDeleted when read-only: '  + JSON.stringify(event));
         }
         mtlog.log('MtIntervalCollection.onMtIntervalRowsDeleted: ' + JSON.stringify(event));
         if (event.mtId === this.mtId && !this.readOnly) {

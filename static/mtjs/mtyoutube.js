@@ -356,7 +356,7 @@ MtYouTubeHandler.prototype.handleYtInfo = function(ytInfo) {
         ]);
     }
 
-    if (ytInfo.snippet.tags.indexOf('Oarstack') >= 0) {
+    if (ytInfo.snippet.tags && ytInfo.snippet.tags.indexOf('Oarstack') >= 0) {
         if (ytInfo.snippet.description.search('50% speed') >= 0) {
             params = params.concat([{property: 'speed_factor', overwrite: false, value: 2}]);
         } else if (ytInfo.snippet.description.search('25% speed') >= 0) {

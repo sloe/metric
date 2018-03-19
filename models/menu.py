@@ -6,9 +6,6 @@ response.meta.description = settings.description
 response.menu = [
     (T('Home'), URL('default','index') == URL(), URL('default','index'), []),
     (T('My Videos'), URL('my','videos') == URL(), URL('my','videos'), []),
-    (T("Item"), False, None, [
-        (T("View"), False, URL("i", "yt"), [])
-    ]),
     (T('Privacy Policy'), URL('default','privacy') == URL(), URL('default','privacy'),[])
 ]
 
@@ -16,6 +13,9 @@ if auth.has_membership('admin'):
     response.menu += [
         (T("Admin"), False, None, [
             (T("Item Types"), False, URL("admin", "itemtype"), [])
+        ]),
+        (T("Item"), False, None, [
+            (T("View"), False, URL("i", "yt"), [])
         ]),
         (T("Debug"), False, None, [
             (T("Albums"), False, URL("debug", "album"), []),

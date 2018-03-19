@@ -45,7 +45,7 @@ MtControlBar.prototype.onClickSave = function(event) {
         location.href = this.gdata.served.baseUrl;
     }
     catch (err) {
-        alert(err.toString());
+        mtalert.setAlert('SAVEFAILED', 'danger', 'Save failed: ' + err.toString(), 300);
     }
 };
 
