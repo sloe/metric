@@ -380,8 +380,7 @@ function MtParamTableBase () {
 
         var rowCount = this.hot.countRows();
         var valueCol = 1;
-        for (var rowIndex = 1; rowIndex < rowCount; rowIndex++) {
-            mtlog.log('Row ' + rowIndex.toFixed());
+        for (var rowIndex = 0; rowIndex < rowCount; rowIndex++) {
 
             var model = this.paramCollection.models[rowIndex];
             if (_.isUndefined(model)) {

@@ -149,7 +149,7 @@ var MtIntervalCollection = Backbone.Collection.extend({
 
 
     loadInitial: function() {
-        this.fetch({
+        return this.fetch({
             error: this.loadInitialErrorCallback,
             originator: 'fetch',
             source: 'model',
