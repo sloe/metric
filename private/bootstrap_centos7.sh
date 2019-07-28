@@ -16,6 +16,10 @@ APPCONFIG_DEST=$APP_DIR/private/$APPCONFIG_LEAFNAME
 GUNICORN_RUN_DIR=/run/gunicorn
 
 yum install -y git
+yum install -y net-tools
+yum install -y epel-release
+yum install -y nginx
+# yum install -y postgresql-server postgresql-devel
 
 if [ ! -d $WEB2PY_DIR ]; then
   if [ ! -d $ROOT ]; then
@@ -83,7 +87,7 @@ done
 export PIPENV_VENV_IN_PROJECT=1
 pip install pipenv
 PATH=$APP_DIR/.local/bin:$PATH
-pipenv --update
+pipenv update
 pipenv install
 PIPENV_BIN=`pipenv --venv`/bin
 
@@ -93,7 +97,7 @@ echo Pipenv path to venv is $PIPENV_BIN
 
 cd $WEB2PY_DIR
 
-$PIPENV_BIN/python web2py.py -S $APPNAME -R applications/$APPNAME/private/compile.py
+# $PIPENV_BIN/python web2py.py -S $APPNAME -R applications/$APPNAME/private/compile.py
 
 cd $APP_DIR
 
